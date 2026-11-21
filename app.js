@@ -73,7 +73,7 @@ const Store = {
 
 /* ===================== ESTADO ===================== */
 let S = { contratoId:'c1', supervisor:'', frente:'', jornadas:[], formatos:[], planosOffline:{}, programas:{},
-  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true} };
+  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto'} };
 /* ===================== PERSONALIZACIÓN ===================== */
 const ACENTOS = {
   azul:   {n:'Azul GEC', a:'#1D6FB8', b:'#3A8DDE', h1:'#13315C', h2:'#1D6FB8'},
@@ -89,11 +89,16 @@ const PORTADAS = [
   {id:'ninguna', n:'Sin imagen', src:''},
   {id:'propia', n:'Mi foto', src:''}
 ];
+const OSCURO_TEL = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+if(OSCURO_TEL && OSCURO_TEL.addEventListener) OSCURO_TEL.addEventListener('change', ()=>{ if(S.tema.modo==='auto') aplicarTema(); });
 function aplicarTema(){
   const t = S.tema, a = ACENTOS[t.acento] || ACENTOS.azul, r = document.documentElement.style;
   r.setProperty('--accent', a.a); r.setProperty('--accent2', a.b); r.setProperty('--h1', a.h1); r.setProperty('--h2', a.h2);
   document.body.classList.toggle('grande', t.letra==='grande');
-  const m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', a.h1);
+  const oscuro = t.modo==='oscuro' || (t.modo==='auto' && OSCURO_TEL && OSCURO_TEL.matches);
+  document.body.classList.toggle('dark', oscuro);
+  const ms = document.getElementById('metaScheme'); if(ms) ms.setAttribute('content', oscuro?'only dark':'only light');
+  const m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', oscuro?'#0D1520':a.h1);
 }
 function portadaURL(){
   const t = S.tema;
@@ -207,7 +212,9 @@ const IP = {
   layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
   hourglass:'<path d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 10 0V3M7 21v-3a5 5 0 0 1 10 0v3"/>',
   lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
-  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'
 };
 const ic = (n, cls='') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IP[n]||''}</svg>`;
 const hi = (n, tono='') => `<span class="hi ${tono}">${ic(n)}</span>`; // ícono en burbuja para títulos
@@ -232,13 +239,13 @@ const saludo = () => { const h=new Date().getHours(); return h<12?'Buenos días'
 function anillo(real, prog, size=118){
   const r=48, C=2*Math.PI*r, rp=38, Cp=2*Math.PI*rp;
   return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" aria-hidden="true">
-    <circle cx="60" cy="60" r="${r}" fill="none" stroke="#E4E9F0" stroke-width="12"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" style="stroke:var(--track)" stroke-width="12"/>
     <circle cx="60" cy="60" r="${r}" fill="none" stroke="url(#gAv)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C*Math.min(real,100)/100} ${C}" transform="rotate(-90 60 60)"/>
-    <circle cx="60" cy="60" r="${rp}" fill="none" stroke="#EEF2F6" stroke-width="5"/>
+    <circle cx="60" cy="60" r="${rp}" fill="none" style="stroke:var(--track2)" stroke-width="5"/>
     <circle cx="60" cy="60" r="${rp}" fill="none" stroke="#9FB9D8" stroke-width="5" stroke-linecap="round" stroke-dasharray="${Cp*Math.min(prog,100)/100} ${Cp}" transform="rotate(-90 60 60)"/>
     <defs><linearGradient id="gAv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A8DDE"/><stop offset="1" stop-color="#0B2545"/></linearGradient></defs>
-    <text x="60" y="62" text-anchor="middle" font-size="22" font-weight="700" fill="#0B2545" font-family="Inter,system-ui,sans-serif">${real}%</text>
-    <text x="60" y="78" text-anchor="middle" font-size="9.5" fill="#5B6878" font-family="Inter,system-ui,sans-serif">ejecutado</text>
+    <text x="60" y="62" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--ink)" font-family="Inter,system-ui,sans-serif">${real}%</text>
+    <text x="60" y="78" text-anchor="middle" font-size="9.5" style="fill:var(--muted)" font-family="Inter,system-ui,sans-serif">ejecutado</text>
   </svg>`;
 }
 
@@ -327,7 +334,7 @@ function modalPrograma(){
   $('#modalRoot').innerHTML = `<div class="modal" data-action="modalBg"><div style="max-height:88vh;overflow:auto">
     <h3>Cargar programa · ${esc(c.numero)}</h3>
     <div class="muted" style="margin-bottom:10px">${esc(p.archivo)} · ${esc(p.fuente)}</div>
-    ${p.errores.length ? `<div class="proto" style="background:#FBE9E7;border-color:#EBC0BA;color:var(--bad)"><b>No se puede cargar. Corrige el archivo:</b><br>${p.errores.slice(0,12).map(esc).join('<br>')}${p.errores.length>12?`<br>… y ${p.errores.length-12} más`:''}</div>`
+    ${p.errores.length ? `<div class="proto bad"><b>No se puede cargar. Corrige el archivo:</b><br>${p.errores.slice(0,12).map(esc).join('<br>')}${p.errores.length>12?`<br>… y ${p.errores.length-12} más`:''}</div>`
       : `<div class="sum" style="margin-bottom:10px">
           <div><b>${p.conceptos.length}</b><span>Conceptos</span></div>
           <div><b>Rev. ${p.rev}</b><span>Se cargará como</span></div>
@@ -527,7 +534,7 @@ function vPrograma(){
       <div style="position:relative;height:16px;margin-bottom:4px">${ticks.join('')}</div>
       ${filtrados.map(k=>{ const r=avanceConcepto(k), e=estadoProg(k); const l=pos(k.ini), w=pos(k.fin)+100/span-l; return `<div style="margin:10px 0">
         <div style="font-size:12px;display:flex;justify-content:space-between"><span><b class="clave">${esc(k.clave)}</b> ${esc(k.desc)}</span><span class="muted">${r}%</span></div>
-        <div style="position:relative;height:16px;background:#F3F6F9;border-radius:4px;margin-top:3px">
+        <div style="position:relative;height:16px;background:var(--track2);border-radius:4px;margin-top:3px">
           <div style="position:absolute;left:${l}%;width:${w}%;top:2px;bottom:2px;background:#C9DAEE;border-radius:3px;overflow:hidden"><div style="height:100%;width:${r}%;background:${e.key==='atr'?'var(--bad)':'var(--blue)'}"></div></div>
           <div style="position:absolute;left:${hoyP}%;top:-2px;bottom:-2px;width:2px;background:var(--bad)"></div>
         </div></div>`; }).join('')}
@@ -550,7 +557,7 @@ function vPrograma(){
       <div style="font-weight:600;margin:4px 0 2px">${esc(k.desc)}</div>
       <div class="muted">${ic('layers','xs')} ${k.cant.toLocaleString('es-MX')} ${esc(k.unidad)} &nbsp;${ic('calendar','xs')} ${fmtFecha(k.ini)} al ${fmtFecha(k.fin)} (${k.dur} días)</div>
       <div style="margin-top:8px;font-size:12px" class="muted">Programado a hoy ${p}%</div>
-      <div class="bar" style="background:#E4E9F0;height:6px"><i style="width:${p}%;background:#9FB9D8"></i></div>
+      <div class="bar" style="height:6px"><i style="width:${p}%;background:#9FB9D8"></i></div>
       <div style="margin-top:6px;font-size:12px" class="muted">Ejecutado ${a}%</div>
       <div class="bar"><i style="width:${a}%;${e.key==='atr'?'background:var(--bad)':''}"></i></div>
     </div>`;}).join('') || '<div class="card"><div class="empty">Ningún concepto con ese estado.</div></div>';
@@ -562,7 +569,7 @@ function vPrograma(){
       <div>${ic('calendar','sumic')}<b>${prog}%</b><span>Programado a hoy</span></div>
       <div>${ic('chart','sumic')}<b>${real}%</b><span>Ejecutado</span></div>
     </div>
-    <div style="margin-top:8px;padding:10px;border-radius:10px;background:${dif<-5?'#FBE9E7':dif<0?'#FFF1D2':'#DDF3E8'};font-size:13.5px;display:flex;gap:8px;align-items:center">${ic(dif<0?'alert':'check')}<span><b>${dif>=0?'Adelantado':'Atrasado'} ${Math.abs(dif)}%</b> respecto al programa (ponderado por duración).</span></div>
+    <div class="dif ${dif<-5?'bad':dif<0?'warn':'ok'}" style="margin-top:8px;padding:10px;border-radius:10px;font-size:13.5px;display:flex;gap:8px;align-items:center">${ic(dif<0?'alert':'check')}<span><b>${dif>=0?'Adelantado':'Atrasado'} ${Math.abs(dif)}%</b> respecto al programa (ponderado por duración).</span></div>
     <div class="row" style="margin-top:10px">
       <button class="btn ghost sm" data-action="abrirPrograma">${ic('file')}Archivo vigente</button>
       <button class="btn sec sm" data-action="pickPrograma">${ic('upload')}Cargar programa</button>
@@ -696,7 +703,9 @@ function vPerfil(){
     <label>Frente habitual</label><div class="fi">${ic('pin')}<input type="text" data-k="frente" data-global="1" value="${esc(S.frente)}" placeholder="Ej. Eje A-C / Zona de andenes"></div>
   </div>
   <div class="card"><h3>${hi('sun','amber')}Personalización</h3>
-    <label style="margin-top:0">Color principal</label><div class="swatches">${sw}</div>
+    <label style="margin-top:0">Apariencia</label>
+    <div class="seg3">${[['claro','sun','Claro'],['oscuro','moon','Oscuro'],['auto','phone','Como el teléfono']].map(([v,n,tx])=>`<button class="${(t.modo||'auto')===v?'on':''}" data-action="setModo" data-v="${v}">${ic(n)}${tx}</button>`).join('')}</div>
+    <label>Color principal</label><div class="swatches">${sw}</div>
     <label>Imagen de portada</label><div class="pgrid">${por}</div>
     ${t.portadaFoto?`<button class="btn ghost xs" style="margin-top:8px" data-action="quitarPortada">${ic('trash')}Quitar mi foto de portada</button>`:''}
     <label>Tamaño de letra</label>
@@ -710,7 +719,7 @@ function vPerfil(){
       <button class="btn ms sm" data-action="login">${MS_LOGO}Iniciar sesión con Microsoft</button>
       <div class="muted" style="margin-top:8px;font-size:11.5px">Dirección de esta app: ${esc(Auth.redirectUri())}</div>`}
   </div>
-  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.2</div>`;
+  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.3</div>`;
 }
 
 function vJornadas(){
@@ -1209,6 +1218,7 @@ document.addEventListener('click', e=>{
     case 'setAcento': S.tema.acento = el.dataset.v; persist(); renderKeep(); break;
     case 'setPortada': S.tema.portada = el.dataset.v; persist(); renderKeep(); break;
     case 'quitarPortada': S.tema.portadaFoto = ''; if(S.tema.portada==='propia') S.tema.portada='gruas'; persist(); renderKeep(); break;
+    case 'setModo': S.tema.modo = el.dataset.v; persist(); renderKeep(); break;
     case 'setLetra': S.tema.letra = el.dataset.v; persist(); renderKeep(); break;
     case 'fotoMS': fotoMicrosoft(true); break;
     case 'quitarFotoPerfil': S.perfil.foto=''; S.perfil.fuente=''; persist(); renderKeep(); toast('Foto quitada.'); break;
@@ -1262,7 +1272,7 @@ function cuentaHTML(){
   if(saved && Array.isArray(saved.jornadas)){
     S = Object.assign(S, saved);
     S.perfil = Object.assign({foto:'', fuente:''}, saved.perfil||{});
-    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true}, saved.tema||{});
+    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto'}, saved.tema||{});
     S.formatos = S.formatos || []; S.frente = S.frente || ''; S.planosOffline = S.planosOffline || {}; S.programas = S.programas || {};
     [...S.jornadas, ...S.formatos].forEach(j=>{ if(j.estado==='enviando') j.estado='pendiente'; });
   }
