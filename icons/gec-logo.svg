@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 64" role="img" aria-label="GEC">
+  <!-- Logo provisional de GEC. Para usar el logo oficial, reemplaza este archivo por gec-logo.svg o gec-logo.png -->
+  <text x="60" y="40" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800" letter-spacing="2" fill="#FFFFFF">GEC</text>
+  <rect x="14" y="48" width="92" height="5" rx="2.5" fill="#3A8DDE"/>
+</svg>

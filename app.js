@@ -35,11 +35,12 @@ const PLANOS = [
   {id:'pl9',contratoId:'c3',clave:'IE-102',titulo:'Canalizaciones de fuerza',disc:'Instalación eléctrica',rev:'C',fecha:'2026-11-08',mb:2.9}
 ];
 const FORMATOS = [
-  {id:'cal', nombre:'Inspección y liberación de calidad', pref:'CAL', carpeta:'Calidad', plantilla:'FMT-CAL-001.xlsx', ico:'✔'},
-  {id:'nc',  nombre:'No conformidad', pref:'NC', carpeta:'No conformidades', plantilla:'FMT-NC-001.xlsx', ico:'⚠'},
-  {id:'sc',  nombre:'Solicitud de cambio', pref:'SC', carpeta:'Solicitudes de cambio', plantilla:'FMT-SC-001.xlsx', ico:'⇄'},
-  {id:'er',  nombre:'Entrega-recepción', pref:'ER', carpeta:'Entrega-recepción', plantilla:'SB-ERM-GEC-001.xlsx', ico:'⇩'}
+  {id:'cal', nombre:'Inspección y liberación de calidad', pref:'CAL', carpeta:'Calidad', plantilla:'FMT-CAL-001.xlsx', ico:'shield', tono:'green'},
+  {id:'nc',  nombre:'No conformidad', pref:'NC', carpeta:'No conformidades', plantilla:'FMT-NC-001.xlsx', ico:'alert', tono:'red'},
+  {id:'sc',  nombre:'Solicitud de cambio', pref:'SC', carpeta:'Solicitudes de cambio', plantilla:'FMT-SC-001.xlsx', ico:'swap', tono:'amber'},
+  {id:'er',  nombre:'Entrega-recepción', pref:'ER', carpeta:'Entrega-recepción', plantilla:'SB-ERM-GEC-001.xlsx', ico:'handover', tono:'navy'}
 ];
+const STEP_IC = ['clipboard','sun','hardhat','camera','alert','chat','book','flag'];
 const STEPS = ['Preparación','Inicio de jornada','Actividades','Evidencia fotográfica','Incidencias','Acuerdos de campo','Nota de bitácora','Cierre de jornada'];
 const CLIMAS = ['Soleado','Parcialmente nublado','Nublado','Lluvia ligera','Lluvia fuerte','Viento fuerte'];
 const CATEGORIAS = ['Oficial albañil','Ayudante general','Fierrero','Carpintero','Soldador','Montador','Electricista','Operador de equipo','Cabo / sobrestante'];
@@ -105,6 +106,99 @@ function setPath(obj, path, val){
   o[parts[parts.length-1]] = val;
 }
 function getPath(obj, path){ return path.split('.').reduce((o,p)=> o==null?undefined:o[p], obj); }
+
+/* ===================== ÍCONOS ===================== */
+const CLOUD_UP = 'M7 15h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.2 6.1 4.5 4.5 0 0 0 7 15z';
+const IP = {
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  cloudSun:'<path d="M10 2.5v1.5M4.2 4.7l1 1M2 10.5h1.5M15.8 4.7l-1 1"/><path d="M6.6 12.6A4 4 0 0 1 13.4 8"/><path d="M9 21h8.5a3.5 3.5 0 0 0 .4-6.98A5 5 0 0 0 8.3 13.3 4 4 0 0 0 9 21z"/>',
+  cloud:'<path d="M7 19h10a4.5 4.5 0 0 0 .6-8.96A6.5 6.5 0 0 0 5.4 9.6 4.8 4.8 0 0 0 7 19z"/>',
+  drizzle:`<path d="${CLOUD_UP}"/><path d="M8 18v1.5M12 19v1.5M16 18v1.5"/>`,
+  rain:`<path d="${CLOUD_UP}"/><path d="M8.5 17.5l-1.5 4M12.5 17.5l-1.5 4M16.5 17.5l-1.5 4"/>`,
+  storm:`<path d="${CLOUD_UP}"/><path d="M13 15l-2.5 4h3.5l-2.5 4"/>`,
+  snow:`<path d="${CLOUD_UP}"/><path d="M8 19h.01M12 19h.01M16 19h.01M10 22h.01M14 22h.01"/>`,
+  fog:'<path d="M4 8h16M3 12h18M5 16h14M8 20h8"/>',
+  wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
+  thermo:'<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>',
+  hardhat:'<path d="M3 18h18M4 18v-2a8 8 0 0 1 16 0v2"/><path d="M10 8.5V5h4v3.5M8 16v-4M16 16v-4"/>',
+  pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  clipboard:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 13l2 2 4-4"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+  alert:'<path d="M12 3.5L21.5 20h-19z"/><path d="M12 10v4M12 17h.01"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+  book:'<path d="M5 4h11a3 3 0 0 1 3 3v14H8a3 3 0 0 1-3-3z"/><path d="M5 18a3 3 0 0 1 3-3h11M9 8h6"/>',
+  flag:'<path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5M4 17v3h16v-3"/>',
+  download:'<path d="M12 4v12M7 11l5 5 5-5M4 17v3h16v-3"/>',
+  file:'<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  fileCheck:'<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 14l2 2 4-4"/>',
+  swap:'<path d="M4 8h15l-3.5-3.5M20 16H5l3.5 3.5"/>',
+  handover:'<path d="M3 7.5l9-4.5 9 4.5v9l-9 4.5-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5M12 12v9M7.5 5.2l9 4.6"/>',
+  refresh:'<path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/>',
+  wifi:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><path d="M12 19.5h.01"/>',
+  wifiOff:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><path d="M12 19.5h.01M3 3l18 18"/>',
+  cloudUp:'<path d="M7 18a4.5 4.5 0 0 1-.8-8.9A6 6 0 0 1 17.5 10a4 4 0 0 1 0 8"/><path d="M12 12v8M9 15l3-3 3 3"/>',
+  chart:'<path d="M4 4v16h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+  gantt:'<path d="M4 6h9M8 12h11M6 18h7"/>',
+  map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  list:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  building:'<path d="M4 21V5l8-3v19M12 8h8v13M3 21h18M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2"/>',
+  chevR:'<path d="M9 6l6 6-6 6"/>',
+  arrowL:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  arrowR:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  play:'<path d="M7 4.5l12 7.5-12 7.5z"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  logout:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  cone:'<path d="M9.5 4h5l4 15h-13z"/><path d="M3 19h18M7.8 11.5h8.4"/>',
+  megaphone:'<path d="M3 10v4h4l9 5V5l-9 5z"/><path d="M19 9a4 4 0 0 1 0 6"/>',
+  pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  hourglass:'<path d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 10 0V3M7 21v-3a5 5 0 0 1 10 0v3"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'
+};
+const ic = (n, cls='') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IP[n]||''}</svg>`;
+const hi = (n, tono='') => `<span class="hi ${tono}">${ic(n)}</span>`; // ícono en burbuja para títulos
+const MS_LOGO = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="9.5" height="9.5" fill="#F25022"/><rect x="12.5" y="2" width="9.5" height="9.5" fill="#7FBA00"/><rect x="2" y="12.5" width="9.5" height="9.5" fill="#00A4EF"/><rect x="12.5" y="12.5" width="9.5" height="9.5" fill="#FFB900"/></svg>';
+// Ícono y color según el clima
+function wx(clima){
+  const c = (clima||'').toLowerCase();
+  if(c.startsWith('soleado')) return {n:'sun', col:'#F2A900', bg:'#FFF4D6'};
+  if(c.startsWith('parcial')) return {n:'cloudSun', col:'#D98E04', bg:'#FFF4D6'};
+  if(c.startsWith('niebla')) return {n:'fog', col:'#7C8DA6', bg:'#EDF1F6'};
+  if(c.startsWith('llovizna')) return {n:'drizzle', col:'#3A8DDE', bg:'#E3EEF8'};
+  if(c.startsWith('lluvia')) return {n:'rain', col:'#1D6FB8', bg:'#E3EEF8'};
+  if(c.startsWith('tormenta')) return {n:'storm', col:'#5B4BA0', bg:'#ECE9F7'};
+  if(c.startsWith('nieve')) return {n:'snow', col:'#5FA0D8', bg:'#E8F3FC'};
+  if(c.startsWith('viento')) return {n:'wind', col:'#4F7FAE', bg:'#E7EFF7'};
+  if(c.startsWith('nublado')) return {n:'cloud', col:'#7C8DA6', bg:'#EDF1F6'};
+  return {n:'cloudSun', col:'#8D99AE', bg:'#EDF1F6'};
+}
+const fechaLarga = () => { const t=new Date().toLocaleDateString('es-MX',{weekday:'long', day:'numeric', month:'long'}); return t.charAt(0).toUpperCase()+t.slice(1); };
+const saludo = () => { const h=new Date().getHours(); return h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'; };
+// Anillo de avance (real y programado)
+function anillo(real, prog, size=118){
+  const r=48, C=2*Math.PI*r, rp=38, Cp=2*Math.PI*rp;
+  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" aria-hidden="true">
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="#E4E9F0" stroke-width="12"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="url(#gAv)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C*Math.min(real,100)/100} ${C}" transform="rotate(-90 60 60)"/>
+    <circle cx="60" cy="60" r="${rp}" fill="none" stroke="#EEF2F6" stroke-width="5"/>
+    <circle cx="60" cy="60" r="${rp}" fill="none" stroke="#9FB9D8" stroke-width="5" stroke-linecap="round" stroke-dasharray="${Cp*Math.min(prog,100)/100} ${Cp}" transform="rotate(-90 60 60)"/>
+    <defs><linearGradient id="gAv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A8DDE"/><stop offset="1" stop-color="#0B2545"/></linearGradient></defs>
+    <text x="60" y="62" text-anchor="middle" font-size="22" font-weight="700" fill="#0B2545" font-family="Inter,system-ui,sans-serif">${real}%</text>
+    <text x="60" y="78" text-anchor="middle" font-size="9.5" fill="#5B6878" font-family="Inter,system-ui,sans-serif">ejecutado</text>
+  </svg>`;
+}
 
 
 /* ===================== CARGA DE PROGRAMA (Excel GEC o XML de Project) ===================== */
@@ -272,54 +366,84 @@ function header(){
   const on = online();
   $('#netChip').classList.toggle('off', !on);
   $('#netTxt').textContent = on ? 'En línea' : 'Sin señal';
+  $('#netIc').innerHTML = ic(on?'wifi':'wifiOff');
   const n = pendientes().length;
-  $('#pendChip').innerHTML = n ? `<span class="chip pend">${n} por enviar</span>` : '';
+  $('#pendChip').innerHTML = n ? `<span class="chip pend">${ic('cloudUp')}${n}</span>` : '';
 }
 
 function selectContrato(){
-  return `<select data-action="pickContrato">${SEED.proyectos.map(p=>`<optgroup label="${esc(p.planta)} · ${esc(p.nombre)}">${SEED.contratos.filter(c=>c.proyectoId===p.id).map(c=>`<option value="${c.id}" ${c.id===S.contratoId?'selected':''}>${esc(c.numero)} — ${esc(c.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  return `<div class="fi">${ic('building')}<select data-action="pickContrato">${SEED.proyectos.map(p=>`<optgroup label="${esc(p.planta)} · ${esc(p.nombre)}">${SEED.contratos.filter(c=>c.proyectoId===p.id).map(c=>`<option value="${c.id}" ${c.id===S.contratoId?'selected':''}>${esc(c.numero)} — ${esc(c.nombre)}</option>`).join('')}</optgroup>`).join('')}</select></div>`;
+}
+
+function climaHomeHTML(){
+  const c = S.climaHoy;
+  if(climaHomeBusy) return `<div class="wxchip">${ic('refresh','spin')}<span>Consultando clima…</span></div>`;
+  if(!c) return `<button class="wxchip" data-action="climaHome">${ic('cloudSun')}<span>Ver clima de mi ubicación</span></button>`;
+  const w = wx(c.clima);
+  return `<button class="wxchip" data-action="climaHome" title="Tocar para actualizar"><span class="wxic" style="color:${w.col}">${ic(w.n)}</span><b>${esc(c.temp)}°</b><span>${esc(c.clima)}<small>a las ${esc(c.hora)}</small></span></button>`;
 }
 
 function vHome(){
   const c = contrato(S.contratoId), p = proyecto(c.proyectoId);
-  const av = avanceContrato(c.id);
+  const av = avanceContrato(c.id), prog = programadoContrato(c.id), dif = Math.round((av-prog)*10)/10;
   const borr = S.jornadas.find(j=>j.contratoId===c.id && j.estado==='borrador');
   const acs = acuerdosAbiertos(c.id);
   const pend = pendientes();
   const ult = S.jornadas.filter(j=>j.contratoId===c.id && j.estado!=='borrador').slice(-1)[0];
+  const ks = conceptosDe(c.id);
+  const nAtr = ks.filter(k=>estadoProg(k).key==='atr').length;
+  const nom = (S.supervisor||'').split(' ')[0];
+  const tile = (v, icono, txt, sub, tono) => `<button class="tile" data-action="go" data-v="${v}"><span class="hi ${tono}">${ic(icono)}</span><b>${txt}</b><small>${sub}</small></button>`;
   return `
-  ${cuentaHTML()}
-  <div class="proto">Versión 1.0 de prueba: la información todavía se guarda solo en este teléfono y el envío a SharePoint está simulado. Toca el indicador <b>En línea</b> para simular que no hay señal.</div>
-  <div class="card">
-    <h3>Contrato</h3>
-    ${selectContrato()}
-    <div class="muted" style="margin-top:8px">${esc(p.planta)} · ${esc(p.nombre)}<br>${esc(c.contratista)}</div>
-  </div>
-  <div class="card">
-    <h3>Avance del contrato</h3>
-    <div class="row" style="align-items:flex-end"><div class="big">${av}%</div><div class="muted" style="text-align:right">ponderado por duración<br>de cada concepto</div></div>
-    <div class="bar" style="margin-top:8px"><i style="width:${av}%"></i></div>
-    ${ult?`<div class="muted" style="margin-top:8px">Última jornada: ${fmtFecha(ult.fecha)}</div>`:''}
-  </div>
+  ${Auth.signedIn()?'':cuentaHTML()}
+  <section class="hero">
+    <div class="hero-top">
+      <div><div class="hola">${saludo()}${nom?`, ${esc(nom)}`:''}</div><div class="hoy">${ic('calendar')}<span>${esc(fechaLarga())}</span></div></div>
+      <div class="clk">${ic('clock')}<span id="clk">${ahora()}</span></div>
+    </div>
+    ${climaHomeHTML()}
+  </section>
   ${borr
-    ? `<button class="btn" data-action="resume" data-id="${borr.id}">Continuar jornada en curso · ${esc(STEPS[borr.paso||0])}</button>`
-    : `<button class="btn" data-action="newJornada">＋ Iniciar jornada de hoy</button>`}
-  <div style="height:12px"></div>
+    ? `<button class="cta" data-action="resume" data-id="${borr.id}"><span class="cta-ic">${ic('pen')}</span><span><b>Continuar jornada en curso</b><small>Paso ${(borr.paso||0)+1} de ${STEPS.length} · ${esc(STEPS[borr.paso||0])}</small></span>${ic('chevR')}</button>`
+    : `<button class="cta" data-action="newJornada"><span class="cta-ic">${ic('play')}</span><span><b>Iniciar jornada de hoy</b><small>Diario de obra · ${esc(c.numero)}</small></span>${ic('chevR')}</button>`}
   <div class="card">
-    <h3>Planos y formatos</h3>
-    <div class="muted" style="margin-bottom:10px">Planos vigentes del contrato y formatos de calidad, no conformidades, solicitudes de cambio y entrega-recepción.</div>
-    <div class="row"><button class="btn sec" data-action="go" data-v="planos">Ver planos</button><button class="btn sec" data-action="go" data-v="formatos">Abrir formatos</button></div>
+    <h3>${hi('building')}Contrato</h3>
+    ${selectContrato()}
+    <div class="meta">
+      <span>${ic('pin')}${esc(p.planta)} · ${esc(p.nombre)}</span>
+      <span>${ic('hardhat')}${esc(c.contratista)}</span>
+    </div>
   </div>
   <div class="card">
-    <h3>Envío a SharePoint</h3>
+    <h3>${hi('chart')}Avance del contrato</h3>
+    <div class="avrow">
+      ${anillo(av, prog)}
+      <div class="avside">
+        <div class="leg"><i style="background:linear-gradient(135deg,#3A8DDE,#0B2545)"></i>Ejecutado <b>${av}%</b></div>
+        <div class="leg"><i style="background:#9FB9D8"></i>Programado <b>${prog}%</b></div>
+        <div class="sem ${dif<-5?'bad':dif<0?'warn':'ok'}">${ic(dif<0?'alert':'check')}${dif>=0?'Adelantado':'Atrasado'} ${Math.abs(dif)}%</div>
+        ${ult?`<div class="muted" style="font-size:12px">${ic('calendar','xs')} Última jornada: ${fmtFecha(ult.fecha)}</div>`:''}
+      </div>
+    </div>
+  </div>
+  <div class="tiles">
+    ${tile('programa','gantt','Programa', nAtr?`<span style="color:var(--bad)">${nAtr} retrasado(s)</span>`:`${ks.length} conceptos`, '')}
+    ${tile('jornadas','book','Jornadas', `${S.jornadas.filter(j=>j.contratoId===c.id).length} registradas`, 'navy')}
+    ${tile('planos','map','Planos', `${PLANOS.filter(x=>x.contratoId===c.id && !x.obsoleto).length} vigentes`, 'teal')}
+    ${tile('formatos','clipboard','Formatos', 'Calidad, NC, cambios', 'amber')}
+  </div>
+  <div class="card">
+    <h3>${hi('cloudUp', pend.length?'amber':'green')}Envío a SharePoint</h3>
     ${pend.length
-      ? `<div class="muted" style="margin-bottom:10px">${pend.length} registro(s) guardado(s) en el teléfono, pendiente(s) de enviar.</div><button class="btn sec" data-action="syncNow">Enviar ahora</button>`
-      : `<div class="muted">Todo enviado. No hay jornadas pendientes.</div>`}
+      ? `<div class="muted" style="margin-bottom:10px">${pend.length} registro(s) guardado(s) en el teléfono, pendiente(s) de enviar.</div><button class="btn sec" data-action="syncNow">${ic('upload')}Enviar ahora</button>`
+      : `<div class="okline">${ic('check')}Todo enviado. No hay registros pendientes.</div>`}
   </div>
   <div class="card">
-    <h3>Acuerdos de campo sin cumplir ${acs.length?`<span class="badge b-pend">${acs.length}</span>`:''}</h3>
-    ${acs.length ? `<div class="list">${acs.map(a=>`<div><div style="font-weight:600">${esc(a.desc)}</div><div class="row" style="margin-top:6px"><div class="muted">${esc(a.resp||'Sin responsable')} · compromiso ${fmtFecha(a.fecha)||'—'}</div><button class="btn sm sec" style="flex:0" data-action="cumplir" data-j="${a.jornadaId}" data-a="${a.id}">Cumplido</button></div></div>`).join('')}</div>` : `<div class="muted">Sin acuerdos pendientes en este contrato.</div>`}
-  </div>`;
+    <h3>${hi('chat', acs.length?'amber':'')}Acuerdos de campo sin cumplir ${acs.length?`<span class="badge b-pend">${acs.length}</span>`:''}</h3>
+    ${acs.length ? `<div class="list">${acs.map(a=>`<div><div style="font-weight:600">${esc(a.desc)}</div><div class="row" style="margin-top:6px"><div class="muted">${ic('user','xs')} ${esc(a.resp||'Sin responsable')} · ${ic('calendar','xs')} ${fmtFecha(a.fecha)||'—'}</div><button class="btn sm sec" style="flex:0" data-action="cumplir" data-j="${a.jornadaId}" data-a="${a.id}">${ic('check')}Cumplido</button></div></div>`).join('')}</div>` : `<div class="okline">${ic('check')}Sin acuerdos pendientes en este contrato.</div>`}
+  </div>
+  ${Auth.signedIn()?cuentaHTML():''}
+  <div class="proto">${ic('info','xs')} Versión 1.0 de prueba: la información todavía se guarda solo en este teléfono y el envío a SharePoint está simulado. Toca el indicador <b>En línea</b> para simular que no hay señal.</div>`;
 }
 
 function estadoConcepto(a){ return a>=100?'Terminado':a>0?'En ejecución':'Pendiente'; }
@@ -356,7 +480,7 @@ function vPrograma(){
     const pos = f => ((toD(f)-toD(ini))/DIA)/span*100;
     const hoyP = Math.max(0, Math.min(100, pos(hoy())));
     const paso = Math.max(7, Math.ceil(span/5/7)*7); const ticks=[]; for(let d=toD(ini); d<=toD(fin); d=new Date(+d+paso*DIA)){ const f=new Date(d); f.setMinutes(f.getMinutes()-f.getTimezoneOffset()); const iso=f.toISOString().slice(0,10); ticks.push(`<span style="position:absolute;left:${pos(iso)}%;font-size:10px;color:var(--muted)">${fmtFecha(iso).replace(/ \d{4}$/,'')}</span>`); }
-    cuerpo = `<div class="card"><h3>Diagrama de barras</h3>
+    cuerpo = `<div class="card"><h3>${hi('gantt')}Diagrama de barras</h3>
       <div class="muted" style="margin-bottom:8px;font-size:12px"><span style="display:inline-block;width:10px;height:10px;background:#C9DAEE;border-radius:2px"></span> programado &nbsp; <span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px"></span> ejecutado &nbsp; <span style="color:var(--bad)">│</span> hoy</div>
       <div style="position:relative;height:16px;margin-bottom:4px">${ticks.join('')}</div>
       ${filtrados.map(k=>{ const r=avanceConcepto(k), e=estadoProg(k); const l=pos(k.ini), w=pos(k.fin)+100/span-l; return `<div style="margin:10px 0">
@@ -369,12 +493,12 @@ function vPrograma(){
   } else if(progVista==='semana'){
     const [lu, dom] = semanaActual();
     const sem = filtrados.filter(k=>k.ini<=dom && k.fin>=lu);
-    cuerpo = `<div class="card"><h3>Esta semana · ${fmtFecha(lu)} al ${fmtFecha(dom)}</h3>
+    cuerpo = `<div class="card"><h3>${hi('calendar')}Esta semana · ${fmtFecha(lu)} al ${fmtFecha(dom)}</h3>
       ${sem.length?sem.map(k=>{ const r=avanceConcepto(k), meta=programadoAl(k,dom), e=estadoProg(k); return `<div class="concept">
         <div class="row"><span class="clave">${esc(k.clave)}</span><span style="flex:0;white-space:nowrap" class="badge ${e.c}">${e.t}</span></div>
         <div style="font-weight:600;margin:4px 0 6px">${esc(k.desc)}</div>
-        <div class="kv"><span>Meta al domingo (programado)</span><b>${meta}%</b></div>
-        <div class="kv"><span>Ejecutado a hoy</span><b>${r}%</b></div>
+        <div class="kv"><span>${ic('flag','xs')} Meta al domingo (programado)</span><b>${meta}%</b></div>
+        <div class="kv"><span>${ic('chart','xs')} Ejecutado a hoy</span><b>${r}%</b></div>
         <div class="kv"><span>Falta para la meta</span><b style="color:${meta-r>0?'var(--bad)':'var(--ok)'}">${Math.max(0,Math.round((meta-r)*10)/10)}%</b></div>
       </div>`;}).join(''):'<div class="empty">No hay conceptos programados esta semana.</div>'}
     </div>`;
@@ -382,7 +506,7 @@ function vPrograma(){
     cuerpo = filtrados.map(k=>{ const a=avanceConcepto(k), p=programadoAl(k,hoy()), e=estadoProg(k); return `<div class="concept">
       <div class="row"><span class="clave">${esc(k.clave)}</span><span style="flex:0;white-space:nowrap" class="badge ${e.c}">${e.t}</span></div>
       <div style="font-weight:600;margin:4px 0 2px">${esc(k.desc)}</div>
-      <div class="muted">${k.cant.toLocaleString('es-MX')} ${esc(k.unidad)} · ${fmtFecha(k.ini)} al ${fmtFecha(k.fin)} (${k.dur} días)</div>
+      <div class="muted">${ic('layers','xs')} ${k.cant.toLocaleString('es-MX')} ${esc(k.unidad)} &nbsp;${ic('calendar','xs')} ${fmtFecha(k.ini)} al ${fmtFecha(k.fin)} (${k.dur} días)</div>
       <div style="margin-top:8px;font-size:12px" class="muted">Programado a hoy ${p}%</div>
       <div class="bar" style="background:#E4E9F0;height:6px"><i style="width:${p}%;background:#9FB9D8"></i></div>
       <div style="margin-top:6px;font-size:12px" class="muted">Ejecutado ${a}%</div>
@@ -391,21 +515,21 @@ function vPrograma(){
   }
   const chip = (key,txt,n) => `<button class="btn sm ${progFiltro===key?'':'ghost'}" data-action="progFiltro" data-f="${key}">${txt}${n!=null?` (${n})`:''}</button>`;
   const seg = (v,txt) => `<button class="btn sm ${progVista===v?'':'ghost'}" style="flex:1" data-action="progVista" data-v="${v}">${txt}</button>`;
-  return `<div class="card"><h3>Programa de obra</h3>${selectContrato()}
+  return `<div class="card"><h3>${hi('gantt')}Programa de obra</h3>${selectContrato()}
     <div class="sum" style="margin-top:12px">
-      <div><b>${prog}%</b><span>Programado a hoy</span></div>
-      <div><b>${real}%</b><span>Ejecutado</span></div>
+      <div>${ic('calendar','sumic')}<b>${prog}%</b><span>Programado a hoy</span></div>
+      <div>${ic('chart','sumic')}<b>${real}%</b><span>Ejecutado</span></div>
     </div>
-    <div style="margin-top:8px;padding:10px;border-radius:10px;background:${dif<-5?'#FBE9E7':dif<0?'#FFF1D2':'#DDF3E8'};font-size:13.5px"><b>${dif>=0?'Adelantado':'Atrasado'} ${Math.abs(dif)}%</b> respecto al programa (ponderado por duración).</div>
+    <div style="margin-top:8px;padding:10px;border-radius:10px;background:${dif<-5?'#FBE9E7':dif<0?'#FFF1D2':'#DDF3E8'};font-size:13.5px;display:flex;gap:8px;align-items:center">${ic(dif<0?'alert':'check')}<span><b>${dif>=0?'Adelantado':'Atrasado'} ${Math.abs(dif)}%</b> respecto al programa (ponderado por duración).</span></div>
     <div class="row" style="margin-top:10px">
-      <button class="btn ghost sm" data-action="abrirPrograma">📄 Ver archivo vigente</button>
-      <button class="btn sec sm" data-action="pickPrograma">⬆ Cargar programa</button>
+      <button class="btn ghost sm" data-action="abrirPrograma">${ic('file')}Archivo vigente</button>
+      <button class="btn sec sm" data-action="pickPrograma">${ic('upload')}Cargar programa</button>
     </div>
     <div class="muted" style="margin-top:8px;font-size:12.5px">Vigente: <b>${(()=>{const r=revisionesDe(c.id); return r.length?`Rev. ${r[r.length-1].rev} · ${esc(r[r.length-1].archivo)} · cargado ${fmtFecha(isoLocal(r[r.length-1].cargado))}`:'Rev. 0 · programa inicial de ejemplo';})()}</b>
     ${revisionesDe(c.id).length?`<br>Revisiones anteriores: Rev. 0 (inicial)${revisionesDe(c.id).slice(0,-1).map(r=>`, Rev. ${r.rev}`).join('')}`:''}<br>Acepta la plantilla de Excel de GEC o un XML de Project.</div>
   </div>
-  <div style="display:flex;gap:6px;margin-bottom:8px">${seg('lista','Lista')}${seg('gantt','Barras')}${seg('semana','Semana')}</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${chip('','Todos')}${chip('atr','Retrasados',cuenta('atr'))}${chip('eje','En tiempo',cuenta('eje'))}${chip('ini','Por iniciar',cuenta('ini'))}${chip('term','Terminados',cuenta('term'))}</div>
+  <div style="display:flex;gap:6px;margin-bottom:8px">${seg('lista',ic('list')+'Lista')}${seg('gantt',ic('gantt')+'Barras')}${seg('semana',ic('calendar')+'Semana')}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${chip('','Todos')}${chip('atr','<i class="sd bad"></i>Retrasados',cuenta('atr'))}${chip('eje','<i class="sd blue"></i>En tiempo',cuenta('eje'))}${chip('ini','<i class="sd gray"></i>Por iniciar',cuenta('ini'))}${chip('term','<i class="sd ok"></i>Terminados',cuenta('term'))}</div>
   ${cuerpo}`;
 }
 
@@ -416,20 +540,23 @@ function vPlanos(){
   const q = planoFiltro.q.trim().toLowerCase();
   const xs = todos.filter(x=>(planoFiltro.obsoletos||!x.obsoleto) && (!planoFiltro.disc||x.disc===planoFiltro.disc) && (!q || (x.clave+' '+x.titulo).toLowerCase().includes(q)));
   const nOff = todos.filter(x=>S.planosOffline[x.id]).length;
-  return `<div class="card"><h3>Planos del contrato</h3>${selectContrato()}
-    <div class="muted" style="margin-top:8px">SharePoint › GEC FIELD › ${esc(p.planta)} › ${esc(p.nombre)} › ${esc(c.numero)} › Planos</div>
-    <input type="search" id="planoQ" placeholder="Buscar por clave o nombre…" value="${esc(planoFiltro.q)}" style="margin-top:10px">
+  return `<div class="card"><h3>${hi('map','teal')}Planos del contrato</h3>${selectContrato()}
+    <div class="muted" style="margin-top:8px;font-size:12px">${ic('layers','xs')} SharePoint › GEC FIELD › ${esc(p.planta)} › ${esc(p.nombre)} › ${esc(c.numero)} › Planos</div>
+    <div class="fi" style="margin-top:10px">${ic('search')}<input type="search" id="planoQ" placeholder="Buscar por clave o nombre…" value="${esc(planoFiltro.q)}"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
       <button class="btn sm ${planoFiltro.disc?'ghost':''}" data-action="planoDisc" data-d="">Todos</button>
       ${discs.map(d=>`<button class="btn sm ${planoFiltro.disc===d?'':'ghost'}" data-action="planoDisc" data-d="${esc(d)}">${esc(d)}</button>`).join('')}
     </div>
     <label class="check" style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--text);font-weight:500;margin-top:6px"><input type="checkbox" data-action="planoObs" ${planoFiltro.obsoletos?'checked':''}> Mostrar revisiones anteriores</label>
-    ${nOff?`<div class="muted">${nOff} plano(s) guardado(s) para ver sin señal.</div>`:''}
+    ${nOff?`<div class="muted">${ic('download','xs')} ${nOff} plano(s) guardado(s) para ver sin señal.</div>`:''}
   </div>
-  ${xs.length?xs.map(x=>`<div class="concept" data-action="verPlano" data-id="${x.id}" style="cursor:pointer;${x.obsoleto?'opacity:.6':''}">
+  ${xs.length?xs.map(x=>`<div class="concept lrow" data-action="verPlano" data-id="${x.id}" style="cursor:pointer;${x.obsoleto?'opacity:.6':''}">
+    <span class="thumb">${ic('map')}<small>${esc(x.rev)}</small></span>
+    <div style="flex:1;min-width:0">
     <div class="row"><span class="clave">${esc(x.clave)} · Rev. ${esc(x.rev)}</span><span style="flex:0;white-space:nowrap">${x.obsoleto?'<span class="badge b-borr">Sustituido</span>':'<span class="badge b-env">Vigente</span>'}</span></div>
     <div style="font-weight:600;margin:4px 0 2px">${esc(x.titulo)}</div>
-    <div class="muted">${esc(x.disc)} · ${fmtFecha(x.fecha)} · PDF ${x.mb} MB ${S.planosOffline[x.id]?' · <b style="color:var(--ok)">✓ sin señal</b>':''}</div>
+    <div class="muted">${esc(x.disc)} · ${fmtFecha(x.fecha)} · PDF ${x.mb} MB ${S.planosOffline[x.id]?` · <b style="color:var(--ok)">${ic('download','xs')} sin señal</b>`:''}</div>
+    </div>${ic('chevR','chev')}
   </div>`).join(''):'<div class="card"><div class="empty">No hay planos que coincidan.</div></div>'}`;
 }
 function planoSVG(x){
@@ -447,12 +574,12 @@ function modalPlano(id){
   $('#modalRoot').innerHTML = `<div class="modal" data-action="modalBg"><div>
     <h3>${esc(x.clave)} · ${esc(x.titulo)}</h3>
     <div class="muted" style="margin-bottom:10px">${esc(x.disc)} · Rev. ${esc(x.rev)} · ${fmtFecha(x.fecha)} · PDF ${x.mb} MB</div>
-    ${vig?`<div class="proto">Esta revisión fue sustituida por la Rev. ${esc(vig.rev)} del ${fmtFecha(vig.fecha)}. No la uses para ejecutar.</div>`:''}
+    ${vig?`<div class="proto">${ic('alert','xs')} Esta revisión fue sustituida por la Rev. ${esc(vig.rev)} del ${fmtFecha(vig.fecha)}. No la uses para ejecutar.</div>`:''}
     ${planoSVG(x)}
     <div class="muted" style="margin:8px 0 12px;font-size:12px">Vista ilustrativa del prototipo. En la versión final aquí se abre el PDF real con zoom.</div>
-    <button class="btn" data-action="abrirPlano" data-id="${x.id}">Abrir plano completo</button>
+    <button class="btn" data-action="abrirPlano" data-id="${x.id}">${ic('map')}Abrir plano completo</button>
     <div style="height:8px"></div>
-    <button class="btn ${off?'danger':'sec'}" data-action="offPlano" data-id="${x.id}">${off?'Quitar de "sin señal"':'⬇ Guardar para ver sin señal'}</button>
+    <button class="btn ${off?'danger':'sec'}" data-action="offPlano" data-id="${x.id}">${off?ic('trash')+'Quitar de "sin señal"':ic('download')+'Guardar para ver sin señal'}</button>
     <div style="height:8px"></div>
     <button class="btn ghost" data-action="modalNo">Cerrar</button>
   </div></div>`;
@@ -466,19 +593,19 @@ function siguienteFolio(cid, tipo){
 function vFormatos(){
   const c = contrato(S.contratoId), p = proyecto(c.proyectoId);
   const gen = S.formatos.filter(x=>x.contratoId===c.id).slice().reverse();
-  return `<div class="card"><h3>Contrato y frente</h3>${selectContrato()}
-    <label>Frente de trabajo</label><input type="text" data-k="frente" data-global="1" value="${esc(S.frente)}" placeholder="Ej. Eje A-C / Zona de andenes" list="frentes2">
+  return `<div class="card"><h3>${hi('building')}Contrato y frente</h3>${selectContrato()}
+    <label>Frente de trabajo</label><div class="fi">${ic('pin')}<input type="text" data-k="frente" data-global="1" value="${esc(S.frente)}" placeholder="Ej. Eje A-C / Zona de andenes" list="frentes2"></div>
     <datalist id="frentes2">${frentesUsados().map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
-    <div class="muted" style="margin-top:8px">Supervisor: <b>${esc(S.supervisor||'— (captúralo en tu primera jornada)')}</b></div>
+    <div class="muted" style="margin-top:8px">${ic('user','xs')} Supervisor: <b>${esc(S.supervisor||'— (captúralo en tu primera jornada)')}</b></div>
   </div>
-  <div class="card"><h3>Nuevo formato</h3>
+  <div class="card"><h3>${hi('plus')}Nuevo formato</h3>
     <div class="muted" style="margin-bottom:10px">Al tocar uno se crea una copia de la plantilla en la carpeta del contrato, ya llenada con proyecto, contrato, frente, supervisor, fecha, hora y folio, y se abre para completarla.</div>
-    ${FORMATOS.map(f=>`<button class="btn ghost" style="justify-content:flex-start;margin-bottom:8px;text-align:left" data-action="askFormato" data-t="${f.id}"><span style="font-size:18px;width:24px">${f.ico}</span><span style="flex:1">${esc(f.nombre)}</span><span class="muted">›</span></button>`).join('')}
+    <div class="ftiles">${FORMATOS.map(f=>`<button class="ftile" data-action="askFormato" data-t="${f.id}"><span class="hi ${f.tono}">${ic(f.ico)}</span><b>${esc(f.nombre)}</b><small>${esc(f.plantilla)}</small></button>`).join('')}</div>
   </div>
-  <div class="card"><h3>Formatos generados</h3>
-    ${gen.length?`<div class="list">${gen.map(x=>{const f=FORMATOS.find(y=>y.id===x.tipo); return `<div><div class="row"><b>${esc(x.folio)}</b><span style="flex:0;white-space:nowrap">${x.estado==='creado'?'<span class="badge b-env">En SharePoint</span>':x.estado==='enviando'?'<span class="badge b-sending">Creando…</span>':'<span class="badge b-pend">Por crear</span>'}</span></div>
+  <div class="card"><h3>${hi('file')}Formatos generados</h3>
+    ${gen.length?`<div class="list">${gen.map(x=>{const f=FORMATOS.find(y=>y.id===x.tipo); return `<div class="lrow"><span class="hi ${f.tono}">${ic(f.ico)}</span><div style="flex:1;min-width:0"><div class="row"><b>${esc(x.folio)}</b><span style="flex:0;white-space:nowrap">${x.estado==='creado'?'<span class="badge b-env">En SharePoint</span>':x.estado==='enviando'?'<span class="badge b-sending">Creando…</span>':'<span class="badge b-pend">Por crear</span>'}</span></div>
       <div class="muted">${esc(f.nombre)} · ${fmtFecha(x.fecha)} ${esc(x.hora)} · ${esc(x.frente)}</div>
-      ${x.estado==='creado'?`<button class="btn sm sec" style="margin-top:6px" data-action="abrirFormato" data-id="${x.id}">Abrir en Excel</button>`:''}</div>`;}).join('')}</div>`
+      ${x.estado==='creado'?`<button class="btn sm sec" style="margin-top:6px" data-action="abrirFormato" data-id="${x.id}">${ic('file')}Abrir en Excel</button>`:''}</div></div>`;}).join('')}</div>`
       :'<div class="empty">Aún no has generado formatos en este contrato.</div>'}
   </div>`;
 }
@@ -489,50 +616,57 @@ function modalFormato(tipo){
   const folio = siguienteFolio(c.id, tipo);
   const datos = [['Folio',folio],['Proyecto',p.nombre],['Cliente',p.cliente],['Planta',p.planta],['Contrato',`${c.numero} — ${c.nombre}`],['Contratista',c.contratista],['Frente',S.frente],['Supervisor',S.supervisor],['Fecha',fmtFecha(hoy())],['Hora',ahora()]];
   $('#modalRoot').innerHTML = `<div class="modal" data-action="modalBg"><div>
-    <h3>${esc(f.nombre)}</h3>
+    <h3 class="mh">${hi(f.ico, f.tono)}${esc(f.nombre)}</h3>
     <div class="muted" style="margin-bottom:8px">Plantilla: ${esc(f.plantilla)}<br>Se guardará en: ${esc(rutaSP(c,f))}</div>
     <div style="max-height:40vh;overflow:auto;margin-bottom:12px">${datos.map(([k,v])=>`<div class="kv"><span>${k}</span><b style="text-align:right">${esc(v)}</b></div>`).join('')}</div>
-    <div class="row"><button class="btn ghost" data-action="modalNo">Cancelar</button><button class="btn" data-action="genFormato" data-t="${tipo}">Generar y abrir</button></div>
+    <div class="row"><button class="btn ghost" data-action="modalNo">Cancelar</button><button class="btn" data-action="genFormato" data-t="${tipo}">${ic('fileCheck')}Generar y abrir</button></div>
   </div></div>`;
 }
 
 function estadoBadge(e){
-  return {borrador:'<span class="badge b-borr">En captura</span>',pendiente:'<span class="badge b-pend">Por enviar</span>',enviando:'<span class="badge b-sending">Enviando…</span>',enviada:'<span class="badge b-env">Enviada</span>'}[e]||'';
+  return {borrador:'<span class="badge b-borr"><i class="sd gray"></i>En captura</span>',pendiente:'<span class="badge b-pend"><i class="sd warn"></i>Por enviar</span>',enviando:'<span class="badge b-sending"><i class="sd blue"></i>Enviando…</span>',enviada:'<span class="badge b-env"><i class="sd ok"></i>Enviada</span>'}[e]||'';
 }
 function vJornadas(){
   const js = S.jornadas.slice().reverse();
-  if(!js.length) return `<div class="card"><div class="empty">Aún no hay jornadas registradas.<br>Inicia la primera desde la pestaña Inicio.</div></div>`;
-  return `<div class="card"><h3>Jornadas registradas</h3><div class="list">${js.map(j=>{const c=contrato(j.contratoId); return `<div data-action="openJornada" data-id="${j.id}" style="cursor:pointer"><div class="row"><b>${fmtFecha(j.fecha)}</b><span style="flex:0;white-space:nowrap">${estadoBadge(j.estado)}</span></div><div class="muted">${esc(c.numero)} — ${esc(c.nombre)}</div></div>`;}).join('')}</div></div>`;
+  if(!js.length) return `<div class="card"><div class="empty"><span class="bigic">${ic('book')}</span>Aún no hay jornadas registradas.<br>Inicia la primera desde la pestaña Inicio.</div></div>`;
+  const ms=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  return `<div class="card"><h3>${hi('book','navy')}Jornadas registradas</h3><div class="list">${js.map(j=>{const c=contrato(j.contratoId); const [,m,d]=j.fecha.split('-'); const w=wx(j.inicio?.clima); return `<div class="lrow" data-action="openJornada" data-id="${j.id}" style="cursor:pointer">
+    <span class="datebox"><b>${+d}</b><small>${ms[+m-1]}</small></span>
+    <div style="flex:1;min-width:0"><div class="row"><b>${esc(c.numero)}</b><span style="flex:0;white-space:nowrap">${estadoBadge(j.estado)}</span></div>
+    <div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.nombre)}</div>
+    <div class="minis">${j.inicio?.clima?`<span style="color:${w.col}">${ic(w.n,'xs')}</span>${j.inicio.temp!==''&&j.inicio.temp!=null?esc(j.inicio.temp)+'°':''}`:''}<span>${ic('users','xs')}${totalPersonal(j)}</span><span>${ic('camera','xs')}${(j.fotos||[]).length}</span>${(j.incidencias||[]).length?`<span style="color:var(--bad)">${ic('alert','xs')}${j.incidencias.length}</span>`:''}</div></div>
+    ${ic('chevR','chev')}</div>`;}).join('')}</div></div>`;
 }
 
 function vDetalle(){
   const j = S.jornadas.find(x=>x.id===detailId); if(!j){ view='jornadas'; return vJornadas(); }
   const c = contrato(j.contratoId);
   const acts = conceptosDe(c.id).filter(k=>Number(j.avances?.[k.id]?.hoy)>0);
-  return `<button class="btn ghost sm" data-action="go" data-v="jornadas">← Jornadas</button><div style="height:10px"></div>
-  <div class="card"><div class="row"><h3 style="margin:0">${fmtFecha(j.fecha)}</h3><span style="flex:0;white-space:nowrap">${estadoBadge(j.estado)}</span></div>
+  return `<button class="btn ghost sm" data-action="go" data-v="jornadas">${ic('arrowL')}Jornadas</button><div style="height:10px"></div>
+  <div class="card"><div class="row"><h3 style="margin:0">${hi('calendar','navy')}${fmtFecha(j.fecha)}</h3><span style="flex:0;white-space:nowrap">${estadoBadge(j.estado)}</span></div>
     <div class="muted" style="margin-top:4px">${esc(c.numero)} — ${esc(c.nombre)}</div></div>
   ${j.estado==='borrador'
-    ? `<button class="btn" data-action="resume" data-id="${j.id}">Continuar captura</button><div style="height:10px"></div><button class="btn danger" data-action="askDelete" data-id="${j.id}">Eliminar borrador</button>`
-    : `<div class="card"><h3>Resumen</h3>${resumenHTML(j)}</div>
-       <div class="card"><h3>Actividades</h3>${acts.length?acts.map(k=>`<div class="kv"><span>${esc(k.clave)} ${esc(k.desc)}</span><b>+${j.avances[k.id].hoy}%</b></div>`).join(''):'<div class="muted">Sin avance registrado.</div>'}</div>
-       ${(j.fotos||[]).length?`<div class="card"><h3>Evidencia fotográfica</h3><div class="photos">${j.fotos.map(f=>`<div class="ph"><img src="${f.data}" alt=""><div class="muted">${esc(f.pie||'Sin descripción')}</div></div>`).join('')}</div></div>`:''}
-       <div class="card"><h3>Nota de bitácora</h3><div class="nota">${esc(j.nota||'—')}</div></div>`}`;
+    ? `<button class="btn" data-action="resume" data-id="${j.id}">${ic('pen')}Continuar captura</button><div style="height:10px"></div><button class="btn danger" data-action="askDelete" data-id="${j.id}">${ic('trash')}Eliminar borrador</button>`
+    : `<div class="card"><h3>${hi('chart')}Resumen</h3>${resumenHTML(j)}</div>
+       <div class="card"><h3>${hi('hardhat')}Actividades</h3>${acts.length?acts.map(k=>`<div class="kv"><span>${esc(k.clave)} ${esc(k.desc)}</span><b>+${j.avances[k.id].hoy}%</b></div>`).join(''):'<div class="muted">Sin avance registrado.</div>'}</div>
+       ${(j.fotos||[]).length?`<div class="card"><h3>${hi('camera')}Evidencia fotográfica</h3><div class="photos">${j.fotos.map(f=>`<div class="ph"><img src="${f.data}" alt=""><div class="muted">${esc(f.pie||'Sin descripción')}</div></div>`).join('')}</div></div>`:''}
+       <div class="card"><h3>${hi('book')}Nota de bitácora</h3><div class="nota">${esc(j.nota||'—')}</div></div>`}`;
 }
 
 function resumenHTML(j){
   const hh = Math.round(totalPersonal(j)*horasJornada(j)*10)/10;
-  return `<div class="sum">
-    <div><b>${totalPersonal(j)}</b><span>Personal en sitio</span></div>
-    <div><b>${hh}</b><span>Horas-hombre</span></div>
-    <div><b>${Object.values(j.avances||{}).filter(a=>Number(a.hoy)>0).length}</b><span>Conceptos con avance</span></div>
-    <div><b>${(j.fotos||[]).length}</b><span>Fotografías</span></div>
-    <div><b>${(j.incidencias||[]).length}</b><span>Incidencias</span></div>
-    <div><b>${(j.acuerdos||[]).length}</b><span>Acuerdos de campo</span></div>
+  const w = wx(j.inicio?.clima);
+  return `<div class="strip">
+    <div>${ic('clock')}<span><small>Horario</small><b>${esc(j.inicio?.horaInicio||'—')} – ${esc(j.cierre?.horaFin||(j.estado==='borrador'?ahora():'—'))}</b></span></div>
+    <div><span style="color:${w.col}">${ic(w.n)}</span><span><small>Clima</small><b>${esc(j.inicio?.clima||'—')}${j.inicio?.temp!==''&&j.inicio?.temp!=null?` · ${esc(j.inicio.temp)}°`:''}</b></span></div>
   </div>
-  <div style="margin-top:10px">
-    <div class="kv"><span>Horario</span><b>${esc(j.inicio?.horaInicio||'—')} a ${esc(j.cierre?.horaFin||(j.estado==='borrador'?ahora()+' (al cerrar)':'—'))}</b></div>
-    <div class="kv"><span>Clima</span><b>${esc(j.inicio?.clima||'—')}${j.inicio?.temp?` · ${esc(j.inicio.temp)} °C`:''}</b></div>
+  <div class="sum s3">
+    <div>${ic('users','sumic')}<b>${totalPersonal(j)}</b><span>Personal</span></div>
+    <div>${ic('hourglass','sumic')}<b>${hh}</b><span>Horas-hombre</span></div>
+    <div>${ic('hardhat','sumic')}<b>${Object.values(j.avances||{}).filter(a=>Number(a.hoy)>0).length}</b><span>Conceptos</span></div>
+    <div>${ic('camera','sumic')}<b>${(j.fotos||[]).length}</b><span>Fotos</span></div>
+    <div class="${(j.incidencias||[]).length?'red':''}">${ic('alert','sumic')}<b>${(j.incidencias||[]).length}</b><span>Incidencias</span></div>
+    <div>${ic('chat','sumic')}<b>${(j.acuerdos||[]).length}</b><span>Acuerdos</span></div>
   </div>`;
 }
 
@@ -551,16 +685,19 @@ function txt(path, ph=''){
 
 function stepPrep(j){
   const c = contrato(j.contratoId);
-  const items = [['epp','Personal con EPP completo'],['permiso','Permisos de trabajo vigentes'],['platica','Plática de seguridad impartida'],['area','Área de trabajo delimitada y señalizada'],['vpm','Reunión VPM']];
-  return `<div class="card"><h3>Datos de la jornada</h3>
-    <div class="muted">${esc(c.numero)} — ${esc(c.nombre)}<br>${esc(c.contratista)}</div>
-    <label>Fecha</label><div class="auto">${fmtFecha(j.fecha)} <span class="tag">automática</span></div>
-    <label>Supervisor GEC</label><input type="text" data-k="supervisor" data-global="1" value="${esc(S.supervisor)}" placeholder="Nombre del supervisor">
-    <label>Frente de trabajo</label>${inp('frente','text','placeholder="Ej. Eje A-C / Zona de andenes" list="frentes"')}
+  const items = [['epp','Personal con EPP completo','hardhat'],['permiso','Permisos de trabajo vigentes','fileCheck'],['platica','Plática de seguridad impartida','megaphone'],['area','Área de trabajo delimitada y señalizada','cone'],['vpm','Reunión VPM','users']];
+  const hechos = items.filter(([k])=>j.prep?.[k]).length;
+  return `<div class="card"><h3>${hi('clipboard')}Datos de la jornada</h3>
+    <div class="meta" style="margin-top:0"><span>${ic('building')}${esc(c.numero)} — ${esc(c.nombre)}</span><span>${ic('hardhat')}${esc(c.contratista)}</span></div>
+    <div class="strip" style="margin-top:12px">
+      <div>${ic('calendar')}<span><small>Fecha</small><b>${fmtFecha(j.fecha)}</b></span><span class="tag">auto</span></div>
+    </div>
+    <label>Supervisor GEC</label><div class="fi">${ic('user')}<input type="text" data-k="supervisor" data-global="1" value="${esc(S.supervisor)}" placeholder="Nombre del supervisor"></div>
+    <label>Frente de trabajo</label><div class="fi">${ic('pin')}${inp('frente','text','placeholder="Ej. Eje A-C / Zona de andenes" list="frentes"')}</div>
     <datalist id="frentes">${frentesUsados().map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
   </div>
-  <div class="card"><h3>Lista de verificación</h3>
-    ${items.map(([k,t])=>`<label class="check" style="text-transform:none;letter-spacing:0;font-size:14.5px;color:var(--text);font-weight:500;margin:0"><input type="checkbox" data-k="prep.${k}" ${j.prep?.[k]?'checked':''}> ${t}</label>`).join('')}
+  <div class="card"><h3>${hi('shield','green')}Lista de verificación <span class="badge ${hechos===items.length?'b-env':'b-borr'}" style="margin-left:auto">${hechos}/${items.length}</span></h3>
+    ${items.map(([k,t,n])=>`<label class="tcheck ${j.prep?.[k]?'on':''}"><input type="checkbox" data-k="prep.${k}" ${j.prep?.[k]?'checked':''}><span class="hi">${ic(n)}</span><span class="tt">${t}</span><span class="tk">${ic('check')}</span></label>`).join('')}
   </div>`;
 }
 
@@ -568,25 +705,35 @@ function stepInicio(j){
   const ps = j.inicio?.personal || [];
   const i = j.inicio||{};
   const auto = i.climaFuente==='auto';
+  const w = wx(i.clima);
   let climaHTML;
   if(auto){
-    climaHTML = `<div class="row"><div><label>Clima</label><div class="auto">${esc(i.clima)} <span class="tag">automático</span></div></div><div><label>Temperatura</label><div class="auto">${esc(i.temp)} °C</div></div></div>
-      <div class="muted" style="margin-top:6px">Registrado a las ${esc(i.climaHora||'')} según la ubicación del teléfono.</div>`;
+    climaHTML = `<div class="wxbig" style="background:${w.bg}">
+        <span class="wxbig-ic" style="color:${w.col}">${ic(w.n)}</span>
+        <div><div class="wxbig-t">${esc(i.temp)}°<small>C</small></div><div class="wxbig-d">${esc(i.clima)}</div></div>
+        <span class="tag" style="margin-left:auto;align-self:flex-start">auto</span>
+      </div>
+      <div class="muted" style="margin-top:6px;font-size:12px">${ic('pin','xs')} Registrado a las ${esc(i.climaHora||'')} según la ubicación del teléfono.</div>`;
   } else if(climaBusy){
-    climaHTML = `<label>Clima y temperatura</label><div class="auto">Obteniendo clima de la ubicación… </div>`;
+    climaHTML = `<div class="wxbig" style="background:var(--bg)"><span class="wxbig-ic" style="color:var(--gray)">${ic('refresh','spin')}</span><div class="wxbig-d">Obteniendo clima de la ubicación…</div></div>`;
   } else {
-    climaHTML = `<div class="proto" style="margin:10px 0 0">No se pudo obtener el clima automáticamente (${esc(climaError||'sin señal o sin permiso de ubicación')}). Captúralo a mano o reintenta.</div>
-      <div class="row"><div><label>Clima</label>${sel('inicio.clima', CLIMAS)}</div><div><label>Temperatura °C</label>${inp('inicio.temp','number','inputmode="decimal" placeholder="Ej. 18"')}</div></div>
-      <button class="btn sec sm" style="margin-top:10px" data-action="retryClima">↻ Reintentar automático</button>`;
+    climaHTML = `<div class="proto" style="margin:0 0 10px">${ic('alert','xs')} No se pudo obtener el clima automáticamente (${esc(climaError||'sin señal o sin permiso de ubicación')}). Elígelo abajo o reintenta.</div>
+      <label style="margin-top:0">Clima</label>
+      <div class="wxgrid">${CLIMAS.map(cl=>{ const x=wx(cl); return `<button class="wxopt ${i.clima===cl?'on':''}" data-action="pickClima" data-c="${esc(cl)}"><span style="color:${x.col}">${ic(x.n)}</span>${esc(cl)}</button>`; }).join('')}</div>
+      <label>Temperatura °C</label><div class="fi">${ic('thermo')}${inp('inicio.temp','number','inputmode="decimal" placeholder="Ej. 18"')}</div>
+      <button class="btn sec sm" style="margin-top:10px" data-action="retryClima">${ic('refresh')}Reintentar automático</button>`;
   }
-  return `<div class="card"><h3>Condiciones iniciales</h3>
-    <label>Hora de inicio</label><div class="auto">${esc(i.horaInicio||'—')} h <span class="tag">automática</span></div>
+  return `<div class="card"><h3>${hi('sun','amber')}Condiciones iniciales</h3>
+    <div class="strip" style="margin-bottom:12px">
+      <div>${ic('clock')}<span><small>Hora de inicio</small><b>${esc(i.horaInicio||'—')} h</b></span><span class="tag">auto</span></div>
+      <div>${ic('calendar')}<span><small>Fecha</small><b>${fmtFecha(j.fecha)}</b></span></div>
+    </div>
     ${climaHTML}
   </div>
-  <div class="card"><h3>Fuerza de trabajo del contratista</h3>
-    ${ps.map((p,i)=>`<div class="row" style="margin-bottom:8px"><div style="flex:2">${sel(`inicio.personal.${i}.cat`, CATEGORIAS, 'Categoría…')}</div><div style="flex:1">${inp(`inicio.personal.${i}.cantidad`,'number','inputmode="numeric" placeholder="Núm."')}</div><button class="btn sm danger" style="flex:0" data-action="delPersonal" data-i="${i}">✕</button></div>`).join('')}
-    <button class="btn sec sm" data-action="addPersonal">＋ Agregar categoría</button>
-    <div class="muted" style="margin-top:8px">Total en sitio: <b>${totalPersonal(j)}</b> personas</div>
+  <div class="card"><h3>${hi('users')}Fuerza de trabajo del contratista</h3>
+    ${ps.map((p,i)=>`<div class="row" style="margin-bottom:8px"><div style="flex:2"><div class="fi">${ic('hardhat')}${sel(`inicio.personal.${i}.cat`, CATEGORIAS, 'Categoría…')}</div></div><div style="flex:1">${inp(`inicio.personal.${i}.cantidad`,'number','inputmode="numeric" placeholder="Núm."')}</div><button class="btn sm danger" style="flex:0;padding:10px" data-action="delPersonal" data-i="${i}" aria-label="Quitar">${ic('trash')}</button></div>`).join('')}
+    <button class="btn sec sm" data-action="addPersonal">${ic('plus')}Agregar categoría</button>
+    <div class="total">${ic('users')}<span>Total en sitio</span><b>${totalPersonal(j)}</b><span>personas</span></div>
   </div>`;
 }
 
@@ -596,13 +743,13 @@ function stepActividades(j){
   const subs = j.sustituciones || [];
   return `<div class="muted" style="margin-bottom:10px">Registra el avance del día de cada concepto trabajado (en % del concepto).</div>
   ${ks.slice().sort((x,y)=>(enProg(y,j)-enProg(x,j))).map(k=>{ const a=avanceConcepto(k); const hoyV = j.avances?.[k.id]?.hoy; const act = Number(hoyV)>0; return `<div class="concept ${act?'act':''}">
-    <div class="row"><span class="clave">${esc(k.clave)} ${enProg(k,j)?'<span class="badge b-sending" style="margin-left:4px">Programado hoy</span>':''}</span><span class="muted" style="text-align:right">acumulado ${a}%</span></div>
+    <div class="row"><span class="clave">${esc(k.clave)} ${enProg(k,j)?`<span class="badge b-sending" style="margin-left:4px">${ic('calendar','xs')} Hoy</span>`:''}</span><span class="muted" style="text-align:right">acumulado ${a}%</span></div>
     <div style="font-weight:600;margin:3px 0 8px">${esc(k.desc)} <span class="muted">(${k.cant.toLocaleString('es-MX')} ${esc(k.unidad)})</span></div>
     <div class="bar" style="margin-bottom:10px"><i style="width:${a}%"></i></div>
     <div class="row"><div style="flex:1"><input type="number" inputmode="decimal" min="0" max="${Math.max(0,100-a+(Number(hoyV)||0))}" step="0.5" placeholder="Avance hoy %" data-k="avances.${k.id}.hoy" value="${esc(hoyV??'')}"></div>
     <div style="flex:2"><input type="text" placeholder="Comentario (opcional)" data-k="avances.${k.id}.com" value="${esc(j.avances?.[k.id]?.com??'')}"></div></div>
   </div>`;}).join('')}
-  <div class="card"><h3>Sustitución de actividad (solo esta jornada)</h3>
+  <div class="card"><h3>${hi('swap','amber')}Sustitución de actividad (solo esta jornada)</h3>
     <div class="muted" style="margin-bottom:8px">Si un concepto programado no se pudo ejecutar hoy (interferencia, suministro, etc.), regístralo aquí. El concepto original conserva su avance y se ejecutará después.</div>
     ${subs.map((s,i)=>`<div class="item"><button class="x" data-action="delSub" data-i="${i}">✕</button>
       <label style="margin-top:0">Concepto que no se ejecutó</label>
@@ -610,46 +757,47 @@ function stepActividades(j){
       <label>Motivo</label>${sel(`sustituciones.${i}.motivo`, ['Interferencia con planta','Falta de suministro','Clima','Falta de frente de trabajo','Equipo descompuesto','Otro'])}
       <label>Actividad que se ejecutó en su lugar</label>${inp(`sustituciones.${i}.nueva`,'text','placeholder="Describe la actividad"')}
     </div>`).join('')}
-    <button class="btn sec sm" data-action="addSub">＋ Registrar sustitución</button>
+    <button class="btn sec sm" data-action="addSub">${ic('plus')}Registrar sustitución</button>
   </div>`;
 }
 
 function stepFotos(j){
   const ks = conceptosDe(j.contratoId);
   const fs = j.fotos || [];
-  return `<div class="card"><h3>Evidencia fotográfica</h3>
-    <div class="muted" style="margin-bottom:10px">Toma fotos o elígelas de la galería. Se reducen de tamaño para ahorrar datos al enviarlas.</div>
-    <label class="btn sec" style="text-transform:none;letter-spacing:0;font-size:15px;margin:0">📷 Agregar fotografías<input type="file" accept="image/*" capture="environment" multiple data-action="addFotos" style="display:none"></label>
+  return `<div class="card"><h3>${hi('camera')}Evidencia fotográfica ${fs.length?`<span class="badge b-sending" style="margin-left:auto">${fs.length}</span>`:''}</h3>
+    <label class="drop"><span class="hi">${ic('camera')}</span><b>Tomar o elegir fotografías</b><small>Se reducen de tamaño para ahorrar datos al enviarlas</small><input type="file" accept="image/*" capture="environment" multiple data-action="addFotos" style="display:none"></label>
   </div>
   ${fs.length?`<div class="photos">${fs.map((f,i)=>`<div class="ph"><img src="${f.data}" alt=""><div>
      <input type="text" placeholder="Descripción" data-k="fotos.${i}.pie" value="${esc(f.pie||'')}">
      <select data-k="fotos.${i}.conceptoId"><option value="">Concepto…</option>${ks.map(k=>`<option value="${k.id}" ${f.conceptoId===k.id?'selected':''}>${esc(k.clave)} ${esc(k.desc)}</option>`).join('')}</select>
-     <button class="btn danger sm" style="width:100%" data-action="delFoto" data-i="${i}">Quitar</button></div></div>`).join('')}</div>`
-   :`<div class="empty">Aún no hay fotografías en esta jornada.</div>`}`;
+     <button class="btn danger sm" style="width:100%" data-action="delFoto" data-i="${i}">${ic('trash')}Quitar</button></div></div>`).join('')}</div>`
+   :`<div class="empty"><span class="bigic">${ic('camera')}</span>Aún no hay fotografías en esta jornada.</div>`}`;
 }
 
 function stepIncidencias(j){
   const xs = j.incidencias || [];
-  return `${xs.map((x,i)=>`<div class="item"><button class="x" data-action="delInc" data-i="${i}">✕</button>
-      <label style="margin-top:0">Tipo</label>${sel(`incidencias.${i}.tipo`, TIPOS_INC)}
-      <label>Severidad</label>${sel(`incidencias.${i}.sev`, ['Baja','Media','Alta'])}
+  return `${xs.map((x,i)=>`<div class="item sev-${({Alta:'a',Media:'m',Baja:'b'})[x.sev]||'n'}"><button class="x" data-action="delInc" data-i="${i}" aria-label="Quitar">${ic('trash')}</button>
+      <div class="ihead">${hi('alert','red')}<b>Incidencia ${i+1}</b></div>
+      <label>Tipo</label>${sel(`incidencias.${i}.tipo`, TIPOS_INC)}
+      <label>Severidad</label><div class="segsev">${['Baja','Media','Alta'].map(v=>`<button class="${x.sev===v?'on':''} s-${v[0].toLowerCase()}" data-action="pickSev" data-i="${i}" data-v="${v}"><i class="sd"></i>${v}</button>`).join('')}</div>
       <label>Descripción</label>${txt(`incidencias.${i}.desc`,'¿Qué pasó? ¿Dónde? ¿A quién afecta?')}
       <label class="check" style="text-transform:none;letter-spacing:0;font-size:14.5px;color:var(--text);font-weight:500;margin-top:6px"><input type="checkbox" data-k="incidencias.${i}.escalar" ${x.escalar?'checked':''}> Escalar a PMO (tema escalable)</label>
     </div>`).join('')}
-  ${xs.length?'':'<div class="card"><div class="empty">Sin incidencias registradas. Si no hubo, continúa al siguiente paso.</div></div>'}
-  <button class="btn sec" data-action="addInc">＋ Registrar incidencia</button>`;
+  ${xs.length?'':`<div class="card"><div class="empty"><span class="bigic" style="color:var(--ok)">${ic('shield')}</span>Sin incidencias registradas. Si no hubo, continúa al siguiente paso.</div></div>`}
+  <button class="btn sec" data-action="addInc">${ic('plus')}Registrar incidencia</button>`;
 }
 
 function stepAcuerdos(j){
   const xs = j.acuerdos || [];
   const prev = acuerdosAbiertos(j.contratoId).filter(a=>a.jornadaId!==j.id);
-  return `${prev.length?`<div class="card"><h3>Acuerdos anteriores sin cumplir</h3><div class="list">${prev.map(a=>`<div><div style="font-weight:600">${esc(a.desc)}</div><div class="row" style="margin-top:6px"><div class="muted">${esc(a.resp||'—')} · ${fmtFecha(a.fecha)||'—'}</div><button class="btn sm sec" style="flex:0" data-action="cumplir" data-j="${a.jornadaId}" data-a="${a.id}">Cumplido</button></div></div>`).join('')}</div></div>`:''}
-  ${xs.map((a,i)=>`<div class="item"><button class="x" data-action="delAc" data-i="${i}">✕</button>
-      <label style="margin-top:0">Acuerdo</label>${txt(`acuerdos.${i}.desc`,'Ej. El contratista reforzará la cuadrilla de fierreros a partir del lunes')}
-      <div class="row"><div><label>Responsable</label>${inp(`acuerdos.${i}.resp`,'text','placeholder="Nombre / empresa"')}</div><div><label>Fecha compromiso</label>${inp(`acuerdos.${i}.fecha`,'date')}</div></div>
+  return `${prev.length?`<div class="card"><h3>${hi('chat','amber')}Acuerdos anteriores sin cumplir</h3><div class="list">${prev.map(a=>`<div><div style="font-weight:600">${esc(a.desc)}</div><div class="row" style="margin-top:6px"><div class="muted">${esc(a.resp||'—')} · ${fmtFecha(a.fecha)||'—'}</div><button class="btn sm sec" style="flex:0" data-action="cumplir" data-j="${a.jornadaId}" data-a="${a.id}">${ic('check')}Cumplido</button></div></div>`).join('')}</div></div>`:''}
+  ${xs.map((a,i)=>`<div class="item"><button class="x" data-action="delAc" data-i="${i}" aria-label="Quitar">${ic('trash')}</button>
+      <div class="ihead">${hi('chat')}<b>Acuerdo ${i+1}</b></div>
+      <label>Acuerdo</label>${txt(`acuerdos.${i}.desc`,'Ej. El contratista reforzará la cuadrilla de fierreros a partir del lunes')}
+      <div class="row"><div><label>Responsable</label><div class="fi">${ic('user')}${inp(`acuerdos.${i}.resp`,'text','placeholder="Nombre / empresa"')}</div></div><div><label>Compromiso</label>${inp(`acuerdos.${i}.fecha`,'date')}</div></div>
     </div>`).join('')}
-  ${xs.length?'':'<div class="card"><div class="empty">Sin acuerdos nuevos en esta jornada.</div></div>'}
-  <button class="btn sec" data-action="addAc">＋ Registrar acuerdo de campo</button>`;
+  ${xs.length?'':`<div class="card"><div class="empty"><span class="bigic">${ic('chat')}</span>Sin acuerdos nuevos en esta jornada.</div></div>`}
+  <button class="btn sec" data-action="addAc">${ic('plus')}Registrar acuerdo de campo</button>`;
 }
 
 function generarNota(j){
@@ -676,40 +824,33 @@ function generarNota(j){
   return L.join('\n');
 }
 function stepNota(j){
-  return `<div class="card"><h3>Nota de bitácora</h3>
+  return `<div class="card"><h3>${hi('book')}Nota de bitácora</h3>
     <div class="muted" style="margin-bottom:10px">Genera un borrador con lo capturado y edítalo antes de cerrar.</div>
-    <button class="btn sec" data-action="genNota">${j.nota?'Volver a generar borrador':'Generar borrador'}</button>
+    <button class="btn sec" data-action="genNota">${ic('refresh')}${j.nota?'Volver a generar borrador':'Generar borrador'}</button>
     <label>Texto de la nota</label>
     <textarea data-k="nota" style="min-height:260px">${esc(j.nota||'')}</textarea>
   </div>`;
 }
 
 function stepCierre(j){
-  return `<div class="card"><h3>Cierre</h3>
-    <label>Hora de término</label><div class="auto">${esc(ahora())} h <span class="tag">se registra al cerrar</span></div>
+  return `<div class="card"><h3>${hi('flag','navy')}Cierre</h3>
+    <div class="strip"><div>${ic('clock')}<span><small>Hora de término</small><b>${esc(ahora())} h</b></span><span class="tag">al cerrar</span></div></div>
     <label>Observaciones finales</label>${txt('cierre.obs','Comentarios generales de la jornada (opcional)')}
   </div>
-  <div class="card"><h3>Resumen de la jornada</h3>${resumenHTML(j)}</div>
-  <div class="muted" style="text-align:center;margin:6px 0">Al cerrar, la jornada queda guardada en el teléfono y se envía en cuanto haya señal.</div>`;
+  <div class="card"><h3>${hi('chart')}Resumen de la jornada</h3>${resumenHTML(j)}</div>
+  <div class="muted" style="text-align:center;margin:6px 0">${ic('cloudUp','xs')} Al cerrar, la jornada queda guardada en el teléfono y se envía en cuanto haya señal.</div>`;
 }
 
 function vWizard(){
   const j = J(); if(!j){ view='home'; return vHome(); }
   const fns = [stepPrep, stepInicio, stepActividades, stepFotos, stepIncidencias, stepAcuerdos, stepNota, stepCierre];
-  return `<div class="steps">${STEPS.map((_,i)=>`<i class="${i<step?'done':i===step?'cur':''}"></i>`).join('')}</div>
-  <div class="stephead"><h2>${STEPS[step]}</h2><span class="muted">Paso ${step+1} de ${STEPS.length}</span></div>
-  <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn ghost sm" data-action="wizPlanos">🗺 Planos</button><button class="btn ghost sm" data-action="wizFormatos">📄 Formatos</button></div>
+  return `<div class="stepper">${STEPS.map((t,i)=>`<span class="${i<step?'done':i===step?'cur':''}" title="${esc(t)}">${ic(i<step?'check':STEP_IC[i])}</span>`).join('')}</div>
+  <div class="stephead"><h2>${hi(STEP_IC[step],'navy')}${STEPS[step]}</h2><span class="muted">${step+1} / ${STEPS.length}</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn ghost sm" data-action="wizPlanos">${ic('map')}Planos</button><button class="btn ghost sm" data-action="wizFormatos">${ic('clipboard')}Formatos</button></div>
   ${fns[step](j)}`;
 }
 
 /* ===================== RENDER ===================== */
-const ICON = {
-  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
-  prog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M4 12h16M4 18h7"/></svg>',
-  plano:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2z"/><path d="M9 3v16M15 5v16"/></svg>',
-  doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
-  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
-};
 function render(){
   header();
   const app = $('#app'), foot = $('#foot');
@@ -717,18 +858,14 @@ function render(){
   if(view==='wizard'){
     app.innerHTML = vWizard();
     foot.innerHTML = `<div class="wizfoot"><div>
-      <button class="btn ghost" data-action="${step===0?'exitWizard':'prev'}">${step===0?'Salir':'← Atrás'}</button>
-      <button class="btn" data-action="${step===STEPS.length-1?'close':'next'}">${step===STEPS.length-1?'Cerrar jornada':'Siguiente →'}</button>
+      <button class="btn ghost" data-action="${step===0?'exitWizard':'prev'}">${step===0?ic('x')+'Salir':ic('arrowL')+'Atrás'}</button>
+      <button class="btn" data-action="${step===STEPS.length-1?'close':'next'}">${step===STEPS.length-1?ic('lock')+'Cerrar jornada':'Siguiente'+ic('arrowR')}</button>
     </div></div>`;
   } else {
     app.innerHTML = view==='planos'?vPlanos(): view==='formatos'?vFormatos(): view==='programa'?vPrograma(): view==='jornadas'?vJornadas(): view==='detalle'?vDetalle(): vHome();
     const t = view==='detalle'?'jornadas':view;
     foot.innerHTML = `<nav class="tabs"><div>
-      <button class="${t==='home'?'on':''}" data-action="go" data-v="home">${ICON.home}Inicio</button>
-      <button class="${t==='programa'?'on':''}" data-action="go" data-v="programa">${ICON.prog}Programa</button>
-      <button class="${t==='jornadas'?'on':''}" data-action="go" data-v="jornadas">${ICON.list}Jornadas</button>
-      <button class="${t==='planos'?'on':''}" data-action="go" data-v="planos">${ICON.plano}Planos</button>
-      <button class="${t==='formatos'?'on':''}" data-action="go" data-v="formatos">${ICON.doc}Formatos</button>
+      ${[['home','home','Inicio'],['programa','gantt','Programa'],['jornadas','book','Jornadas'],['planos','map','Planos'],['formatos','clipboard','Formatos']].map(([v,n,tx])=>`<button class="${t===v?'on':''}" data-action="go" data-v="${v}"><span class="tb">${ic(n)}</span>${tx}</button>`).join('')}
     </div></nav>`;
   }
   return y;
@@ -742,28 +879,53 @@ let climaBusy = false, climaError = '';
 const WMO = c => c===0?'Soleado': c<=2?'Parcialmente nublado': c===3?'Nublado': (c===45||c===48)?'Niebla':
   (c>=51&&c<=57)?'Llovizna': (c===61||c===80)?'Lluvia ligera': (c>=63&&c<=67)||(c>=81&&c<=82)?'Lluvia fuerte':
   (c>=71&&c<=77)||(c>=85&&c<=86)?'Nieve / granizo': c>=95?'Tormenta eléctrica':'Nublado';
+// Consulta el clima actual en la ubicación del teléfono. Devuelve {clima, temp, lat, lon}.
+function consultarClima(){
+  return new Promise((res, rej)=>{
+    if(!online()) return rej(new Error('sin señal'));
+    if(!('geolocation' in navigator)) return rej(new Error('el navegador no da la ubicación'));
+    let listo = false;
+    const t = setTimeout(()=>{ listo=true; rej(new Error('tiempo de espera agotado')); }, 15000);
+    try{
+      navigator.geolocation.getCurrentPosition(async pos=>{
+        try{
+          const {latitude:la, longitude:lo} = pos.coords;
+          const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la.toFixed(4)}&longitude=${lo.toFixed(4)}&current=temperature_2m,weather_code&timezone=auto`);
+          const d = await r.json();
+          clearTimeout(t); if(listo) return;
+          res({clima:WMO(d.current.weather_code), temp:Math.round(d.current.temperature_2m), lat:+la.toFixed(5), lon:+lo.toFixed(5)});
+        }catch(e){ clearTimeout(t); if(!listo) rej(new Error('no se pudo consultar el servicio de clima')); }
+      }, ()=>{ clearTimeout(t); if(!listo) rej(new Error('sin permiso de ubicación')); }, {timeout:12000, maximumAge:600000});
+    }catch(e){ clearTimeout(t); rej(new Error('ubicación no disponible')); }
+  });
+}
 function obtenerClima(j){
   if(!j || climaBusy) return;
   climaBusy = true; climaError = ''; if(view==='wizard') renderKeep();
-  const fin = (err)=>{ climaBusy=false; if(err) climaError=err; persist(); if(view==='wizard' && J()===j) renderKeep(); };
-  if(!online()) return fin('sin señal');
-  if(!('geolocation' in navigator)) return fin('el navegador no da la ubicación');
-  const t = setTimeout(()=>fin('tiempo de espera agotado'), 15000);
+  consultarClima().then(c=>{
+    j.inicio.clima = c.clima; j.inicio.temp = c.temp;
+    j.inicio.climaFuente = 'auto'; j.inicio.climaHora = ahora();
+    j.inicio.lat = c.lat; j.inicio.lon = c.lon;
+    S.climaHoy = {clima:c.clima, temp:c.temp, hora:ahora(), t:Date.now()};
+  }).catch(e=>{ climaError = e.message; })
+  .finally(()=>{ climaBusy=false; persist(); if(view==='wizard' && J()===j) renderKeep(); });
+}
+// Clima de la pantalla de Inicio (se actualiza cada 30 min)
+let climaHomeBusy = false;
+function climaInicio(manual){
+  const c = S.climaHoy;
+  if(climaHomeBusy || (!manual && c && Date.now()-c.t < 30*60000)) return;
+  climaHomeBusy = true; if(view==='home') renderKeep();
+  consultarClima().then(r=>{ S.climaHoy = {clima:r.clima, temp:r.temp, hora:ahora(), t:Date.now()}; persist(); })
+    .catch(e=>{ if(manual) toast('No se pudo obtener el clima: '+e.message+'.'); })
+    .finally(()=>{ climaHomeBusy=false; if(view==='home') renderKeep(); });
+}
+// Solo consulta sola si el permiso de ubicación ya se dio; si no, espera a que el usuario toque.
+function climaInicioSiHayPermiso(){
   try{
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      try{
-        const {latitude:la, longitude:lo} = pos.coords;
-        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la.toFixed(4)}&longitude=${lo.toFixed(4)}&current=temperature_2m,weather_code&timezone=auto`);
-        const d = await r.json();
-        clearTimeout(t);
-        j.inicio.clima = WMO(d.current.weather_code);
-        j.inicio.temp = Math.round(d.current.temperature_2m);
-        j.inicio.climaFuente = 'auto'; j.inicio.climaHora = ahora();
-        j.inicio.lat = +la.toFixed(5); j.inicio.lon = +lo.toFixed(5);
-        fin();
-      }catch(e){ clearTimeout(t); fin('no se pudo consultar el servicio de clima'); }
-    }, ()=>{ clearTimeout(t); fin('sin permiso de ubicación'); }, {timeout:12000, maximumAge:600000});
-  }catch(e){ clearTimeout(t); fin('ubicación no disponible'); }
+    if(navigator.permissions && navigator.permissions.query)
+      navigator.permissions.query({name:'geolocation'}).then(p=>{ if(p.state==='granted') climaInicio(false); }).catch(()=>{});
+  }catch(e){}
 }
 
 /* ===================== VALIDACIÓN ===================== */
@@ -843,7 +1005,7 @@ document.addEventListener('change', async e=>{
   const k = el.dataset.k;
   if(k && (el.tagName==='SELECT' || el.type==='checkbox' || el.type==='number')){
     // refresca totales visibles (personal, resumen) sin perder la captura
-    if(k.startsWith('inicio.personal')) renderKeep();
+    if(k.startsWith('inicio.personal') || k.startsWith('prep.')) renderKeep();
   }
 });
 
@@ -945,6 +1107,9 @@ document.addEventListener('click', e=>{
     }
     case 'abrirFormato': { const x=S.formatos.find(y=>y.id===el.dataset.id); toast(`Prototipo: en la versión final aquí se abre ${x?x.archivo:'el archivo'} en Excel.`); break; }
     case 'retryClima': obtenerClima(j); break;
+    case 'climaHome': climaInicio(true); break;
+    case 'pickClima': j.inicio.clima = el.dataset.c; j.inicio.climaFuente = 'manual'; persist(); renderKeep(); break;
+    case 'pickSev': { const x=j.incidencias[+el.dataset.i]; if(x){ x.sev=el.dataset.v; persist(); renderKeep(); } break; }
     case 'genNota': j.nota = generarNota(j); persist(); renderKeep(); toast('Borrador generado. Puedes editarlo.'); break;
     case 'cumplir': {
       const jj = S.jornadas.find(x=>x.id===el.dataset.j); const ac = jj?.acuerdos.find(x=>x.id===el.dataset.a);
@@ -970,14 +1135,15 @@ function nuevaVersion(){
     <button class="btn" data-action="recargar">Recargar ahora</button><div style="height:8px"></div><button class="btn ghost" data-action="modalNo">Después</button></div></div>`;
 }
 function cuentaHTML(){
-  if(!Auth.signedIn()) return `<div class="card"><h3>Cuenta</h3><div class="muted" style="margin-bottom:10px">Inicia sesión con tu cuenta de Microsoft de GEC.</div>
-    <button class="btn" data-action="login">Iniciar sesión con Microsoft</button>
+  if(!Auth.signedIn()) return `<div class="card"><h3>${hi('user')}Cuenta</h3><div class="muted" style="margin-bottom:10px">Inicia sesión con tu cuenta de Microsoft de GEC.</div>
+    <button class="btn ms" data-action="login">${MS_LOGO}Iniciar sesión con Microsoft</button>
     <div class="muted" style="margin-top:8px;font-size:12px">Dirección de esta app: ${esc(Auth.redirectUri())}</div></div>`;
   const u = Auth.user() || {};
-  return `<div class="card"><h3>Cuenta</h3>
-    <div style="font-weight:600">${esc(u.displayName||'Conectado')}</div><div class="muted">${esc(u.mail||u.userPrincipalName||'')}</div>
+  const ini = (u.displayName||'?').split(' ').filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+  return `<div class="card"><h3>${hi('user')}Cuenta</h3>
+    <div class="lrow"><span class="avatar">${esc(ini)}</span><div><div style="font-weight:600">${esc(u.displayName||'Conectado')}</div><div class="muted">${MS_LOGO} ${esc(u.mail||u.userPrincipalName||'')}</div></div></div>
     ${spPrueba?`<div class="muted" style="margin-top:8px">${esc(spPrueba)}</div>`:''}
-    <div class="row" style="margin-top:10px"><button class="btn sec sm" data-action="probarSP">Probar SharePoint</button><button class="btn ghost sm" data-action="logout">Cerrar sesión</button></div></div>`;
+    <div class="row" style="margin-top:10px"><button class="btn sec sm" data-action="probarSP">${ic('layers')}Probar SharePoint</button><button class="btn ghost sm" data-action="logout">${ic('logout')}Cerrar sesión</button></div></div>`;
 }
 /* ===================== ARRANQUE ===================== */
 (async()=>{
@@ -996,6 +1162,8 @@ function cuentaHTML(){
   }
   if(!contrato(S.contratoId)) S.contratoId='c1';
   render();
+  climaInicioSiHayPermiso();
+  setInterval(()=>{ const c=$('#clk'); if(c) c.textContent=ahora(); }, 15000);
   if(Auth.signedIn()) Auth.me().then(u=>{ if(u){ if(!S.supervisor) { S.supervisor=u.displayName||''; persist(); } render(); } }).catch(()=>{});
   if(!Store.db) toast('Este navegador no permite guardar datos: la captura se perderá al cerrar la página.');
   setTimeout(()=>sync(),800);
