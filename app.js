@@ -73,7 +73,7 @@ const Store = {
 
 /* ===================== ESTADO ===================== */
 let S = { contratoId:'c1', supervisor:'', frente:'', jornadas:[], formatos:[], planosOffline:{}, programas:{},
-  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto'} };
+  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto', marca:true, marcaGPS:true} };
 /* ===================== PERSONALIZACIÓN ===================== */
 const ACENTOS = {
   azul:   {n:'Azul GEC', a:'#1D6FB8', b:'#3A8DDE', h1:'#13315C', h2:'#1D6FB8'},
@@ -712,6 +712,11 @@ function vPerfil(){
     <div class="seg2"><button class="${t.letra!=='grande'?'on':''}" data-action="setLetra" data-v="normal"><span style="font-size:14px">Aa</span> Normal</button><button class="${t.letra==='grande'?'on':''}" data-action="setLetra" data-v="grande"><span style="font-size:19px">Aa</span> Grande</button></div>
     <label class="tcheck ${t.saludo?'on':''}" style="margin-top:12px"><input type="checkbox" data-action="toggleSaludo" ${t.saludo?'checked':''}><span class="hi">${ic('user')}</span><span class="tt">Mostrar mi foto en la portada</span><span class="tk">${ic('check')}</span></label>
   </div>
+  <div class="card"><h3>${hi('camera')}Fotografías</h3>
+    <label class="tcheck ${t.marca?'on':''}" style="margin-top:0"><input type="checkbox" data-action="toggleMarca" ${t.marca?'checked':''}><span class="hi">${ic('shield')}</span><span class="tt">Marca de agua GEC en las fotos<small class="sub">Fecha, hora, contrato, frente, planta y supervisor</small></span><span class="tk">${ic('check')}</span></label>
+    <label class="tcheck ${t.marca&&t.marcaGPS?'on':''}" style="${t.marca?'':'opacity:.5;pointer-events:none'}"><input type="checkbox" data-action="toggleMarcaGPS" ${t.marcaGPS?'checked':''} ${t.marca?'':'disabled'}><span class="hi">${ic('pin')}</span><span class="tt">Incluir coordenadas GPS<small class="sub">Ubicación del teléfono al agregar la foto</small></span><span class="tk">${ic('check')}</span></label>
+    ${t.marca?`<div class="wmprev">${ic('camera')}<div class="wmband"><b>GEC</b><span><i>${esc(new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}))} · ${ahora()} h</i><i>${esc(contrato(S.contratoId).numero)}${S.frente?' · '+esc(S.frente):''}</i><i>${esc(proyecto(contrato(S.contratoId).proyectoId).planta)}${S.supervisor?' · '+esc(S.supervisor):''}${t.marcaGPS?' · 19.43260, -99.13320':''}</i></span></div></div>`:''}
+  </div>
   <div class="card"><h3>${hi('layers')}Cuenta Microsoft</h3>
     ${u?`${spPrueba?`<div class="muted" style="margin-bottom:8px">${esc(spPrueba)}</div>`:''}
       <div class="row"><button class="btn sec sm" data-action="probarSP">${ic('layers')}Probar SharePoint</button><button class="btn ghost sm" data-action="logout">${ic('logout')}Cerrar sesión</button></div>`
@@ -719,7 +724,7 @@ function vPerfil(){
       <button class="btn ms sm" data-action="login">${MS_LOGO}Iniciar sesión con Microsoft</button>
       <div class="muted" style="margin-top:8px;font-size:11.5px">Dirección de esta app: ${esc(Auth.redirectUri())}</div>`}
   </div>
-  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.4</div>`;
+  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.5</div>`;
 }
 
 function vJornadas(){
@@ -862,7 +867,7 @@ function stepFotos(j){
   const ks = conceptosDe(j.contratoId);
   const fs = j.fotos || [];
   return `<div class="card"><h3>${hi('camera')}Evidencia fotográfica ${fs.length?`<span class="badge b-sending" style="margin-left:auto">${fs.length}</span>`:''}</h3>
-    <label class="drop"><span class="hi">${ic('camera')}</span><b>Tomar o elegir fotografías</b><small>Se reducen de tamaño para ahorrar datos al enviarlas</small><input type="file" accept="image/*" capture="environment" multiple data-action="addFotos" style="display:none"></label>
+    <label class="drop"><span class="hi">${ic('camera')}</span><b>Tomar o elegir fotografías</b><small>${S.tema.marca?'Con marca de agua GEC · ':''}Se reducen de tamaño para ahorrar datos</small><input type="file" accept="image/*" capture="environment" multiple data-action="addFotos" style="display:none"></label>
   </div>
   ${fs.length?`<div class="photos">${fs.map((f,i)=>`<div class="ph"><img src="${f.data}" alt=""><div>
      <input type="text" placeholder="Descripción" data-k="fotos.${i}.pie" value="${esc(f.pie||'')}">
@@ -1046,7 +1051,55 @@ function validar(j, s){
 }
 
 /* ===================== FOTOS ===================== */
-function comprimir(file, max=1280){
+// Ubicación rápida para la marca de agua (usa la última conocida si tarda)
+function posicionRapida(){
+  return new Promise(res=>{
+    if(!('geolocation' in navigator)) return res(null);
+    const t=setTimeout(()=>res(null), 5000);
+    try{ navigator.geolocation.getCurrentPosition(p=>{ clearTimeout(t); res({lat:p.coords.latitude, lon:p.coords.longitude}); }, ()=>{ clearTimeout(t); res(null); }, {timeout:4500, maximumAge:300000, enableHighAccuracy:true}); }
+    catch(e){ clearTimeout(t); res(null); }
+  });
+}
+// Datos que se imprimen sobre la foto
+function datosMarca(j, file, pos){
+  const c = contrato(j.contratoId), p = proyecto(c.proyectoId), i = j.inicio||{};
+  const t = new Date(file.lastModified || Date.now());
+  const f = t.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' · ' + t.toTimeString().slice(0,5) + ' h';
+  const ll = pos || (i.lat!=null ? {lat:i.lat, lon:i.lon} : null);
+  const l3 = [p.planta, S.supervisor||''].filter(Boolean).join(' · ');
+  return {
+    l1: f + (i.clima ? `   ${i.temp!==''&&i.temp!=null?i.temp+' °C ':''}${i.clima}` : ''),
+    l2: `${c.numero}${j.frente?' · '+j.frente:''}`,
+    l3: l3 + (S.tema.marcaGPS && ll ? ` · ${(+ll.lat).toFixed(5)}, ${(+ll.lon).toFixed(5)}` : '')
+  };
+}
+// Dibuja la marca de agua GEC en la parte inferior de la foto
+function dibujarMarca(g, w, h, m){
+  const u = Math.min(w, h) / 100;              // unidad relativa al tamaño de la foto
+  const bh = Math.round(u * 17), y0 = h - bh;
+  const gr = g.createLinearGradient(0, y0 - u*6, 0, h);
+  gr.addColorStop(0, 'rgba(11,37,69,0)'); gr.addColorStop(0.25, 'rgba(11,37,69,.72)'); gr.addColorStop(1, 'rgba(11,37,69,.9)');
+  g.fillStyle = gr; g.fillRect(0, y0 - u*6, w, bh + u*6);
+  const pad = u * 3.2, font = 'Inter, Roboto, "Segoe UI", Arial, sans-serif';
+  // logo GEC + FIELD
+  g.textBaseline = 'alphabetic'; g.fillStyle = '#FFFFFF';
+  g.font = `800 ${u*6.4}px ${font}`; const gw = g.measureText('GEC').width;
+  g.fillText('GEC', pad, y0 + u*8.2);
+  g.fillStyle = '#3A8DDE'; g.fillRect(pad, y0 + u*9.6, gw, u*1.1);
+  g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `700 ${u*2.5}px ${font}`;
+  g.fillText('F I E L D', pad + gw/2 - g.measureText('F I E L D').width/2, y0 + u*13.6);
+  // separador
+  const x1 = pad + Math.max(gw, u*12) + u*3;
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x1 - u*1.6, y0 + u*3, Math.max(1, u*.25), bh - u*6);
+  // textos
+  const maxW = w - x1 - pad;
+  const fit = (t, sz, wt) => { g.font = `${wt} ${sz}px ${font}`; let s = t; while(s.length > 4 && g.measureText(s).width > maxW) s = s.slice(0,-2); return s===t ? t : s.trimEnd()+'…'; };
+  g.fillStyle = '#FFFFFF'; g.fillText(fit(m.l1, u*3.5, 700), x1, y0 + u*5.6);
+  g.fillStyle = 'rgba(255,255,255,.92)'; g.fillText(fit(m.l2, u*3.1, 600), x1, y0 + u*10.2);
+  g.fillStyle = 'rgba(207,224,243,.95)'; g.fillText(fit(m.l3, u*2.8, 500), x1, y0 + u*14.4);
+}
+
+function comprimir(file, max=1280, marca=null){
   return new Promise((res)=>{
     const r = new FileReader();
     r.onload = ()=>{
@@ -1055,7 +1108,8 @@ function comprimir(file, max=1280){
         let w=img.width, h=img.height;
         if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
         const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const g = cv.getContext('2d'); g.drawImage(img,0,0,w,h);
+        if(marca) try{ dibujarMarca(g, w, h, marca); }catch(e){ console.warn(e); }
         res(cv.toDataURL('image/jpeg',0.72));
       };
       img.onerror = ()=>res(null);
@@ -1133,13 +1187,16 @@ document.addEventListener('change', async e=>{
     else { S.tema.portadaFoto = d; S.tema.portada = 'propia'; toast('Portada actualizada.'); }
     persist(); renderKeep(); return;
   }
+  if(el.dataset.action==='toggleMarca'){ S.tema.marca = el.checked; persist(); renderKeep(); return; }
+  if(el.dataset.action==='toggleMarcaGPS'){ S.tema.marcaGPS = el.checked; persist(); renderKeep(); return; }
   if(el.dataset.action==='toggleSaludo'){ S.tema.saludo = el.checked; persist(); renderKeep(); return; }
   if(el.dataset.action==='addFotos'){
     const j=J(); if(!j) return;
     const files=[...el.files]; if(!files.length) return;
     toast('Procesando fotografías…');
     j.fotos = j.fotos||[];
-    for(const f of files){ const d=await comprimir(f); if(d) j.fotos.push({id:uid(),data:d,pie:'',conceptoId:''}); }
+    const pos = (S.tema.marca && S.tema.marcaGPS) ? await posicionRapida() : null;
+    for(const f of files){ const d=await comprimir(f, 1280, S.tema.marca ? datosMarca(j, f, pos) : null); if(d) j.fotos.push({id:uid(),data:d,pie:'',conceptoId:'',marca:!!S.tema.marca}); }
     persist(); renderKeep(); toast(`${files.length} foto(s) agregada(s).`);
     return;
   }
@@ -1311,7 +1368,7 @@ function cuentaHTML(){
   if(saved && Array.isArray(saved.jornadas)){
     S = Object.assign(S, saved);
     S.perfil = Object.assign({foto:'', fuente:''}, saved.perfil||{});
-    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto'}, saved.tema||{});
+    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto', marca:true, marcaGPS:true}, saved.tema||{});
     S.formatos = S.formatos || []; S.frente = S.frente || ''; S.planosOffline = S.planosOffline || {}; S.programas = S.programas || {};
     [...S.jornadas, ...S.formatos].forEach(j=>{ if(j.estado==='enviando') j.estado='pendiente'; });
   }
