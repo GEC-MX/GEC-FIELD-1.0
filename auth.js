@@ -72,14 +72,24 @@ const Auth = (() => {
   }
 
   async function me() {
-    const u = await graph('/me?$select=displayName,mail,userPrincipalName');
+    const u = await graph('/me?$select=displayName,mail,userPrincipalName,jobTitle');
     guardar(KEY_USER, u);
     return u;
+  }
+
+  // Foto de perfil de Microsoft 365 (devuelve data URL o null si no tiene foto)
+  async function photo() {
+    const at = await accessToken();
+    let r = await fetch('https://graph.microsoft.com/v1.0/me/photos/240x240/$value', { headers: { Authorization: `Bearer ${at}` } });
+    if (!r.ok) r = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', { headers: { Authorization: `Bearer ${at}` } });
+    if (!r.ok) return null;
+    const b = await r.blob();
+    return await new Promise(res => { const f = new FileReader(); f.onload = () => res(f.result); f.onerror = () => res(null); f.readAsDataURL(b); });
   }
 
   function logout() { guardar(KEY, null); guardar(KEY_USER, null); }
   const signedIn = () => !!leer(KEY);
   const user = () => leer(KEY_USER);
 
-  return { login, logout, handleRedirect, graph, me, signedIn, user, redirectUri };
+  return { login, logout, handleRedirect, graph, me, photo, signedIn, user, redirectUri };
 })();

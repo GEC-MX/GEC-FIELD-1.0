@@ -72,7 +72,49 @@ const Store = {
 };
 
 /* ===================== ESTADO ===================== */
-let S = { contratoId:'c1', supervisor:'', frente:'', jornadas:[], formatos:[], planosOffline:{}, programas:{} };
+let S = { contratoId:'c1', supervisor:'', frente:'', jornadas:[], formatos:[], planosOffline:{}, programas:{},
+  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true} };
+/* ===================== PERSONALIZACIÓN ===================== */
+const ACENTOS = {
+  azul:   {n:'Azul GEC', a:'#1D6FB8', b:'#3A8DDE', h1:'#13315C', h2:'#1D6FB8'},
+  marino: {n:'Marino',   a:'#13315C', b:'#2B5A94', h1:'#0B2545', h2:'#13315C'},
+  acero:  {n:'Gris acero', a:'#4A6378', b:'#7189A0', h1:'#2C3E50', h2:'#4A6378'},
+  cielo:  {n:'Cielo',    a:'#0E86C9', b:'#45B0E8', h1:'#0B4F7C', h2:'#0E86C9'}
+};
+const PORTADAS = [
+  {id:'gruas', n:'Grúas', src:'icons/hero/gruas.svg'},
+  {id:'estructura', n:'Estructura', src:'icons/hero/estructura.svg'},
+  {id:'planos', n:'Planos', src:'icons/hero/planos.svg'},
+  {id:'amanecer', n:'Amanecer', src:'icons/hero/amanecer.svg'},
+  {id:'ninguna', n:'Sin imagen', src:''},
+  {id:'propia', n:'Mi foto', src:''}
+];
+function aplicarTema(){
+  const t = S.tema, a = ACENTOS[t.acento] || ACENTOS.azul, r = document.documentElement.style;
+  r.setProperty('--accent', a.a); r.setProperty('--accent2', a.b); r.setProperty('--h1', a.h1); r.setProperty('--h2', a.h2);
+  document.body.classList.toggle('grande', t.letra==='grande');
+  const m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', a.h1);
+}
+function portadaURL(){
+  const t = S.tema;
+  if(t.portada==='propia') return t.portadaFoto || '';
+  return (PORTADAS.find(x=>x.id===t.portada)||{}).src || '';
+}
+function nombreUsuario(){ const u = Auth.signedIn() ? (Auth.user()||{}) : {}; return u.displayName || S.supervisor || ''; }
+function iniciales(n){ return (n||'').split(' ').filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase() || ''; }
+function avatar(cls=''){
+  const f = S.perfil.foto, n = nombreUsuario();
+  if(f) return `<span class="avatar ${cls}"><img src="${f}" alt=""></span>`;
+  return `<span class="avatar ${cls}">${n?esc(iniciales(n)):ic('user')}</span>`;
+}
+async function fotoMicrosoft(manual){
+  if(!Auth.signedIn() || !online()){ if(manual) toast('Necesitas señal e iniciar sesión con Microsoft.'); return; }
+  try{
+    const f = await Auth.photo();
+    if(f){ S.perfil.foto = f; S.perfil.fuente = 'ms'; persist(); renderKeep(); if(manual) toast('Foto de Microsoft 365 aplicada.'); }
+    else if(manual) toast('Tu cuenta de Microsoft no tiene foto. Puedes subir una desde el teléfono.');
+  }catch(e){ if(manual) toast('No se pudo obtener la foto: '+e.message); }
+}
 let view = 'home', step = 0, curId = null, detailId = null;
 let simOffline = false;
 let planoFiltro = {q:'', disc:'', obsoletos:false};
@@ -367,6 +409,7 @@ function header(){
   $('#netChip').classList.toggle('off', !on);
   $('#netTxt').textContent = on ? 'En línea' : 'Sin señal';
   $('#netIc').innerHTML = ic(on?'wifi':'wifiOff');
+  $('#meBtn').innerHTML = avatar('sm');
   const n = pendientes().length;
   $('#pendChip').innerHTML = n ? `<span class="chip pend">${ic('cloudUp')}${n}</span>` : '';
 }
@@ -392,13 +435,13 @@ function vHome(){
   const ult = S.jornadas.filter(j=>j.contratoId===c.id && j.estado!=='borrador').slice(-1)[0];
   const ks = conceptosDe(c.id);
   const nAtr = ks.filter(k=>estadoProg(k).key==='atr').length;
-  const nom = (S.supervisor||'').split(' ')[0];
+  const nom = nombreUsuario().split(' ')[0];
   const tile = (v, icono, txt, sub, tono) => `<button class="tile" data-action="go" data-v="${v}"><span class="hi ${tono}">${ic(icono)}</span><b>${txt}</b><small>${sub}</small></button>`;
   return `
-  ${Auth.signedIn()?'':cuentaHTML()}
-  <section class="hero">
+  ${Auth.signedIn()?'':`<div class="signin">${ic('lock','xs')}<span>Sin sesión de Microsoft</span><button class="btn ms xs" data-action="login">${MS_LOGO}Iniciar sesión</button></div>`}
+  <section class="hero ${portadaURL()?'img':''}" ${portadaURL()?`style="background-image:linear-gradient(180deg,rgba(11,37,69,.55) 0%,rgba(11,37,69,.25) 45%,rgba(11,37,69,.75) 100%),url('${portadaURL()}')"`:''}>
     <div class="hero-top">
-      <div><div class="hola">${saludo()}${nom?`, ${esc(nom)}`:''}</div><div class="hoy">${ic('calendar')}<span>${esc(fechaLarga())}</span></div></div>
+      <div class="hola-wrap">${S.tema.saludo?`<button data-action="go" data-v="perfil" class="hero-av" aria-label="Mi perfil">${avatar()}</button>`:''}<div><div class="hola">${saludo()}${nom?`, ${esc(nom)}`:''}</div><div class="hoy">${ic('calendar')}<span>${esc(fechaLarga())}</span></div></div></div>
       <div class="clk">${ic('clock')}<span id="clk">${ahora()}</span></div>
     </div>
     ${climaHomeHTML()}
@@ -442,7 +485,6 @@ function vHome(){
     <h3>${hi('chat', acs.length?'amber':'')}Acuerdos de campo sin cumplir ${acs.length?`<span class="badge b-pend">${acs.length}</span>`:''}</h3>
     ${acs.length ? `<div class="list">${acs.map(a=>`<div><div style="font-weight:600">${esc(a.desc)}</div><div class="row" style="margin-top:6px"><div class="muted">${ic('user','xs')} ${esc(a.resp||'Sin responsable')} · ${ic('calendar','xs')} ${fmtFecha(a.fecha)||'—'}</div><button class="btn sm sec" style="flex:0" data-action="cumplir" data-j="${a.jornadaId}" data-a="${a.id}">${ic('check')}Cumplido</button></div></div>`).join('')}</div>` : `<div class="okline">${ic('check')}Sin acuerdos pendientes en este contrato.</div>`}
   </div>
-  ${Auth.signedIn()?cuentaHTML():''}
   <div class="proto">${ic('info','xs')} Versión 1.0 de prueba: la información todavía se guarda solo en este teléfono y el envío a SharePoint está simulado. Toca el indicador <b>En línea</b> para simular que no hay señal.</div>`;
 }
 
@@ -626,6 +668,51 @@ function modalFormato(tipo){
 function estadoBadge(e){
   return {borrador:'<span class="badge b-borr"><i class="sd gray"></i>En captura</span>',pendiente:'<span class="badge b-pend"><i class="sd warn"></i>Por enviar</span>',enviando:'<span class="badge b-sending"><i class="sd blue"></i>Enviando…</span>',enviada:'<span class="badge b-env"><i class="sd ok"></i>Enviada</span>'}[e]||'';
 }
+function vPerfil(){
+  const u = Auth.signedIn() ? (Auth.user()||{}) : null;
+  const t = S.tema;
+  const sw = Object.entries(ACENTOS).map(([k,a])=>`<button class="swatch ${t.acento===k?'on':''}" data-action="setAcento" data-v="${k}" aria-label="${a.n}"><i style="background:linear-gradient(135deg,${a.b},${a.h1})">${t.acento===k?ic('check'):''}</i><small>${a.n}</small></button>`).join('');
+  const por = PORTADAS.map(x=>{
+    const src = x.id==='propia' ? t.portadaFoto : x.src;
+    const bg = src ? `background-image:url('${src}')` : '';
+    if(x.id==='propia' && !t.portadaFoto) return `<label class="pthumb add ${t.portada==='propia'?'on':''}">${ic('camera')}<small>Mi foto</small><input type="file" accept="image/*" data-action="addPortada" style="display:none"></label>`;
+    return `<button class="pthumb ${t.portada===x.id?'on':''} ${x.id==='ninguna'?'none':''}" style="${bg}" data-action="setPortada" data-v="${x.id}">${t.portada===x.id?`<span class="pk">${ic('check')}</span>`:''}<small>${x.n}</small></button>`;
+  }).join('');
+  return `<button class="btn ghost sm" data-action="go" data-v="home">${ic('arrowL')}Inicio</button><div style="height:10px"></div>
+  <section class="pcard">
+    <div class="pcover" ${portadaURL()?`style="background-image:url('${portadaURL()}')"`:''}></div>
+    <div class="pbody">
+      <label class="pav">${avatar('xl')}<span class="pcam">${ic('camera')}</span><input type="file" accept="image/*" data-action="addFotoPerfil" style="display:none"></label>
+      <div class="pname">${esc(nombreUsuario()||'Supervisor GEC')}</div>
+      ${u?`<div class="muted">${esc(u.jobTitle||'Supervisión GEC')}</div><div class="pmail">${MS_LOGO}${esc(u.mail||u.userPrincipalName||'')}</div>`:`<div class="muted">Sin sesión de Microsoft</div>`}
+      <div class="prow">
+        ${u?`<button class="btn sec xs" data-action="fotoMS">${MS_LOGO}Usar foto de Microsoft</button>`:''}
+        ${S.perfil.foto?`<button class="btn ghost xs" data-action="quitarFotoPerfil">${ic('trash')}Quitar foto</button>`:''}
+      </div>
+    </div>
+  </section>
+  <div class="card"><h3>${hi('user')}Datos de supervisor</h3>
+    <label style="margin-top:0">Nombre en jornadas y formatos</label><div class="fi">${ic('user')}<input type="text" data-k="supervisor" data-global="1" value="${esc(S.supervisor)}" placeholder="Nombre del supervisor"></div>
+    <label>Frente habitual</label><div class="fi">${ic('pin')}<input type="text" data-k="frente" data-global="1" value="${esc(S.frente)}" placeholder="Ej. Eje A-C / Zona de andenes"></div>
+  </div>
+  <div class="card"><h3>${hi('sun','amber')}Personalización</h3>
+    <label style="margin-top:0">Color principal</label><div class="swatches">${sw}</div>
+    <label>Imagen de portada</label><div class="pgrid">${por}</div>
+    ${t.portadaFoto?`<button class="btn ghost xs" style="margin-top:8px" data-action="quitarPortada">${ic('trash')}Quitar mi foto de portada</button>`:''}
+    <label>Tamaño de letra</label>
+    <div class="seg2"><button class="${t.letra!=='grande'?'on':''}" data-action="setLetra" data-v="normal"><span style="font-size:14px">Aa</span> Normal</button><button class="${t.letra==='grande'?'on':''}" data-action="setLetra" data-v="grande"><span style="font-size:19px">Aa</span> Grande</button></div>
+    <label class="tcheck ${t.saludo?'on':''}" style="margin-top:12px"><input type="checkbox" data-action="toggleSaludo" ${t.saludo?'checked':''}><span class="hi">${ic('user')}</span><span class="tt">Mostrar mi foto en la portada</span><span class="tk">${ic('check')}</span></label>
+  </div>
+  <div class="card"><h3>${hi('layers')}Cuenta Microsoft</h3>
+    ${u?`${spPrueba?`<div class="muted" style="margin-bottom:8px">${esc(spPrueba)}</div>`:''}
+      <div class="row"><button class="btn sec sm" data-action="probarSP">${ic('layers')}Probar SharePoint</button><button class="btn ghost sm" data-action="logout">${ic('logout')}Cerrar sesión</button></div>`
+    :`<div class="muted" style="margin-bottom:10px">Inicia sesión para enviar a SharePoint y usar tu foto de Microsoft 365.</div>
+      <button class="btn ms sm" data-action="login">${MS_LOGO}Iniciar sesión con Microsoft</button>
+      <div class="muted" style="margin-top:8px;font-size:11.5px">Dirección de esta app: ${esc(Auth.redirectUri())}</div>`}
+  </div>
+  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.2</div>`;
+}
+
 function vJornadas(){
   const js = S.jornadas.slice().reverse();
   if(!js.length) return `<div class="card"><div class="empty"><span class="bigic">${ic('book')}</span>Aún no hay jornadas registradas.<br>Inicia la primera desde la pestaña Inicio.</div></div>`;
@@ -852,6 +939,7 @@ function vWizard(){
 
 /* ===================== RENDER ===================== */
 function render(){
+  aplicarTema();
   header();
   const app = $('#app'), foot = $('#foot');
   const y = window.scrollY;
@@ -862,7 +950,7 @@ function render(){
       <button class="btn" data-action="${step===STEPS.length-1?'close':'next'}">${step===STEPS.length-1?ic('lock')+'Cerrar jornada':'Siguiente'+ic('arrowR')}</button>
     </div></div>`;
   } else {
-    app.innerHTML = view==='planos'?vPlanos(): view==='formatos'?vFormatos(): view==='programa'?vPrograma(): view==='jornadas'?vJornadas(): view==='detalle'?vDetalle(): vHome();
+    app.innerHTML = view==='planos'?vPlanos(): view==='formatos'?vFormatos(): view==='programa'?vPrograma(): view==='jornadas'?vJornadas(): view==='detalle'?vDetalle(): view==='perfil'?vPerfil(): vHome();
     const t = view==='detalle'?'jornadas':view;
     foot.innerHTML = `<nav class="tabs"><div>
       ${[['home','home','Inicio'],['programa','gantt','Programa'],['jornadas','book','Jornadas'],['planos','map','Planos'],['formatos','clipboard','Formatos']].map(([v,n,tx])=>`<button class="${t===v?'on':''}" data-action="go" data-v="${v}"><span class="tb">${ic(n)}</span>${tx}</button>`).join('')}
@@ -948,13 +1036,13 @@ function validar(j, s){
 }
 
 /* ===================== FOTOS ===================== */
-function comprimir(file){
+function comprimir(file, max=1280){
   return new Promise((res)=>{
     const r = new FileReader();
     r.onload = ()=>{
       const img = new Image();
       img.onload = ()=>{
-        const max=1280; let w=img.width, h=img.height;
+        let w=img.width, h=img.height;
         if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
         const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
         cv.getContext('2d').drawImage(img,0,0,w,h);
@@ -993,6 +1081,16 @@ document.addEventListener('change', async e=>{
   if(el.id==='progFile'){ const f=el.files[0]; if(f){ toast(`Leyendo ${f.name}…`); cargarArchivoPrograma(f); } return; }
   if(el.dataset.action==='planoObs'){ planoFiltro.obsoletos = el.checked; renderKeep(); return; }
   if(el.dataset.action==='pickContrato'){ S.contratoId=el.value; persist(); renderKeep(); return; }
+  if(el.dataset.action==='addFotoPerfil' || el.dataset.action==='addPortada'){
+    const f = el.files[0]; if(!f) return;
+    const perfil = el.dataset.action==='addFotoPerfil';
+    const d = await comprimir(f, perfil?320:1280);
+    if(!d){ toast('No se pudo leer la imagen.'); return; }
+    if(perfil){ S.perfil.foto = d; S.perfil.fuente = 'propia'; toast('Foto de perfil actualizada.'); }
+    else { S.tema.portadaFoto = d; S.tema.portada = 'propia'; toast('Portada actualizada.'); }
+    persist(); renderKeep(); return;
+  }
+  if(el.dataset.action==='toggleSaludo'){ S.tema.saludo = el.checked; persist(); renderKeep(); return; }
   if(el.dataset.action==='addFotos'){
     const j=J(); if(!j) return;
     const files=[...el.files]; if(!files.length) return;
@@ -1057,7 +1155,7 @@ document.addEventListener('click', e=>{
     case 'delAc': j.acuerdos.splice(+el.dataset.i,1); persist(); renderKeep(); break;
     case 'pickPrograma': { const f=$('#progFile'); f.value=''; f.click(); break; }
     case 'login': Auth.login(); break;
-    case 'logout': Auth.logout(); spPrueba=''; render(); toast('Sesión cerrada.'); break;
+    case 'logout': Auth.logout(); spPrueba=''; if(S.perfil.fuente==='ms'){ S.perfil.foto=''; S.perfil.fuente=''; persist(); } render(); toast('Sesión cerrada.'); break;
     case 'recargar':
       navigator.serviceWorker.getRegistration().then(r=>{
         if(r && r.waiting){ navigator.serviceWorker.addEventListener('controllerchange', ()=>location.reload()); r.waiting.postMessage('skipWaiting'); }
@@ -1108,6 +1206,12 @@ document.addEventListener('click', e=>{
     case 'abrirFormato': { const x=S.formatos.find(y=>y.id===el.dataset.id); toast(`Prototipo: en la versión final aquí se abre ${x?x.archivo:'el archivo'} en Excel.`); break; }
     case 'retryClima': obtenerClima(j); break;
     case 'climaHome': climaInicio(true); break;
+    case 'setAcento': S.tema.acento = el.dataset.v; persist(); renderKeep(); break;
+    case 'setPortada': S.tema.portada = el.dataset.v; persist(); renderKeep(); break;
+    case 'quitarPortada': S.tema.portadaFoto = ''; if(S.tema.portada==='propia') S.tema.portada='gruas'; persist(); renderKeep(); break;
+    case 'setLetra': S.tema.letra = el.dataset.v; persist(); renderKeep(); break;
+    case 'fotoMS': fotoMicrosoft(true); break;
+    case 'quitarFotoPerfil': S.perfil.foto=''; S.perfil.fuente=''; persist(); renderKeep(); toast('Foto quitada.'); break;
     case 'pickClima': j.inicio.clima = el.dataset.c; j.inicio.climaFuente = 'manual'; persist(); renderKeep(); break;
     case 'pickSev': { const x=j.incidencias[+el.dataset.i]; if(x){ x.sev=el.dataset.v; persist(); renderKeep(); } break; }
     case 'genNota': j.nota = generarNota(j); persist(); renderKeep(); toast('Borrador generado. Puedes editarlo.'); break;
@@ -1157,6 +1261,8 @@ function cuentaHTML(){
   const saved = await Store.get('state');
   if(saved && Array.isArray(saved.jornadas)){
     S = Object.assign(S, saved);
+    S.perfil = Object.assign({foto:'', fuente:''}, saved.perfil||{});
+    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true}, saved.tema||{});
     S.formatos = S.formatos || []; S.frente = S.frente || ''; S.planosOffline = S.planosOffline || {}; S.programas = S.programas || {};
     [...S.jornadas, ...S.formatos].forEach(j=>{ if(j.estado==='enviando') j.estado='pendiente'; });
   }
@@ -1164,7 +1270,7 @@ function cuentaHTML(){
   render();
   climaInicioSiHayPermiso();
   setInterval(()=>{ const c=$('#clk'); if(c) c.textContent=ahora(); }, 15000);
-  if(Auth.signedIn()) Auth.me().then(u=>{ if(u){ if(!S.supervisor) { S.supervisor=u.displayName||''; persist(); } render(); } }).catch(()=>{});
+  if(Auth.signedIn()) Auth.me().then(u=>{ if(u){ if(!S.supervisor) { S.supervisor=u.displayName||''; persist(); } render(); if(!S.perfil.foto) fotoMicrosoft(false); } }).catch(()=>{});
   if(!Store.db) toast('Este navegador no permite guardar datos: la captura se perderá al cerrar la página.');
   setTimeout(()=>sync(),800);
 })();

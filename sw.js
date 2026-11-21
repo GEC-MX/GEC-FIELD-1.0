@@ -1,8 +1,9 @@
 /* GEC FIELD — trabajo sin señal: guarda la app en el teléfono.
    Cambia VERSION en cada publicación para que los teléfonos tomen la versión nueva. */
-const VERSION = 'gecfield-v1.1.0';
+const VERSION = 'gecfield-v1.2.0';
 const APP = ['./', './index.html', './app.js', './auth.js', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/gec-logo.svg'];
+  './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/gec-logo.svg',
+  './icons/hero/gruas.svg', './icons/hero/estructura.svg', './icons/hero/planos.svg', './icons/hero/amanecer.svg'];
 const EXTERNOS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
