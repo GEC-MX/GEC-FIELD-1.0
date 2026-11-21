@@ -76,6 +76,9 @@ const PDF = (() => {
     line(x1, y1, x2, y2, color = '#D9DFE7', lw = 0.6) {
       this.cur.push(`q ${rgb(color)} RG ${lw} w 1 J ${x1.toFixed(2)} ${this.Y(y1)} m ${x2.toFixed(2)} ${this.Y(y2)} l S Q`);
     }
+    fillPoly(pts, color) {
+      this.cur.push(`q ${rgb(color)} rg ${pts.map((p, i) => `${p[0].toFixed(2)} ${this.Y(p[1])} ${i ? 'l' : 'm'}`).join(' ')} h f Q`);
+    }
     poly(pts, color, lw = 1.4) {
       this.cur.push(`q ${rgb(color)} RG ${lw} w 1 J 1 j ${pts.map((p, i) => `${p[0].toFixed(2)} ${this.Y(p[1])} ${i ? 'l' : 'm'}`).join(' ')} S Q`);
     }
@@ -306,9 +309,13 @@ function reporteJornadaPDF(j) {
     d.text(M + CW / 2, 53, 'REPORTE DIARIO DE SUPERVISIÓN DE OBRA', { size: 12.5, bold: true, color: C.navy, align: 'center' });
     d.text(M + CW / 2, 67, `${REPORTE_CODIGO} · Rev. 0`, { size: 8, color: C.gray, align: 'center' });
     const lx = M + CW - 61;
-    d.text(lx, 62, 'GEC', { size: 22, bold: true, color: C.navy, align: 'center' });
-    d.rect(lx - 26, 66, 52, 2.6, { fill: C.acc });
-    d.text(lx, 76, 'Grupo Ejecutivo Confianza', { size: 5.6, color: C.gray, align: 'center' });
+    // logo oficial GEC (mismo trazo que icons/gec-logo.svg)
+    { const k = 44 / 445, ox = lx - 925 * k / 2 - 40 * k, oy = 36 - 40 * k, P = a => a.map(([x, y]) => [ox + x * k, oy + y * k]);
+      d.fillPoly(P([[55, 470], [503, 53], [950, 468], [506, 150]]), '#1E1E1E');
+      [[[427, 345], [427, 325], [392, 325], [392, 467], [427, 467], [427, 402], [410, 402]],
+       [[523, 325], [486, 325], [486, 467], [523, 467]], [[486, 396], [516, 396]],
+       [[617, 345], [617, 325], [579, 325], [579, 467], [617, 467], [617, 447]]]
+        .forEach(t => d.poly(P(t), '#1E1E1E', 1)); }
     // bloque gris de datos
     d.rect(M, 90, CW, 42, { fill: '#EEF1F5' });
     const cel = [['Contrato', c.numero], ['Fecha', ff(j.fecha)], ['Hora', `${i0.horaInicio || '—'} – ${cie.horaFin || '—'}`], ['Folio', folio],

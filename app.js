@@ -720,7 +720,7 @@ function vPerfil(){
     <div class="nomen">${NOMENCLATURAS.map(x=>`<button class="${(t.nomen||'cfn')===x.id?'on':''}" data-action="setNomen" data-v="${x.id}"><span class="rd"></span><span><b>${x.n}</b>${x.p?`<small>${esc(x.p)}</small>`:''}</span></button>`).join('')}</div>
     ${t.nomen==='custom'?`<input type="text" data-k="nomenCustom" data-tema="1" value="${esc(t.nomenCustom||'')}" placeholder="{PROYECTO}_{FRENTE}_{FECHA}_{N}" style="margin-top:8px"><div class="muted" style="font-size:11.5px;margin-top:4px">Campos: {PROYECTO} {CONTRATO} {PLANTA} {FRENTE} {FECHA} {HORA} {N}</div>`:''}
     <div class="nomprev">${ic('camera','xs')} Ejemplo: <b>${esc(nombreFoto({contratoId:S.contratoId, frente:S.frente||'Eje A-C', fecha:hoy()}, Date.now(), 1))}.jpg</b></div>
-    ${t.marca?`<div class="wmprev">${ic('camera')}${t.marcaCodigo?`<span class="wmcod">${esc(nombreFoto({contratoId:S.contratoId, frente:S.frente||'Eje A-C', fecha:hoy()}, Date.now(), 1))}</span>`:''}<div class="wmband"><b>GEC</b><span><i>${esc(new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}))} · ${ahora()} h</i><i>${esc(proyecto(contrato(S.contratoId).proyectoId).nombre)} · ${esc(contrato(S.contratoId).numero)}${t.marcaGPS?' · GPS 19.43260, -99.13320':''}</i><i>${S.frente?'Frente: '+esc(S.frente)+' · ':''}${esc(proyecto(contrato(S.contratoId).proyectoId).planta)}${S.supervisor?' · '+esc(S.supervisor):''}</i></span></div></div>`:''}
+    ${t.marca?`<div class="wmprev">${ic('camera')}${t.marcaCodigo?`<span class="wmcod">${esc(nombreFoto({contratoId:S.contratoId, frente:S.frente||'Eje A-C', fecha:hoy()}, Date.now(), 1))}</span>`:''}<div class="wmband"><img class="wmlogo" src="icons/gec-logo.svg" alt="GEC"><span><i>${esc(new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}))} · ${ahora()} h</i><i>${esc(proyecto(contrato(S.contratoId).proyectoId).nombre)} · ${esc(contrato(S.contratoId).numero)}${t.marcaGPS?' · GPS 19.43260, -99.13320':''}</i><i>${S.frente?'Frente: '+esc(S.frente)+' · ':''}${esc(proyecto(contrato(S.contratoId).proyectoId).planta)}${S.supervisor?' · '+esc(S.supervisor):''}</i></span></div></div>`:''}
   </div>
   <div class="card"><h3>${hi('layers')}Cuenta Microsoft</h3>
     ${u?`${spPrueba?`<div class="muted" style="margin-bottom:8px">${esc(spPrueba)}</div>`:''}
@@ -1114,6 +1114,15 @@ function datosMarca(j, file, pos, codigo){
     cod: codigo || ''
   };
 }
+// Trazo del logo oficial de GEC (coordenadas del SVG, viewBox 40 40 925 445)
+const GEC_LOGO = {
+  chevron: 'M55 470 L503 53 L950 468 L506 150 Z',
+  letras: [
+    'M427 345 V333 Q427 325 419 325 H400 Q392 325 392 333 V459 Q392 467 400 467 H419 Q427 467 427 459 V402 H410',
+    'M523 325 H486 V467 H523 M486 396 H516',
+    'M617 345 V333 Q617 325 609 325 H587 Q579 325 579 333 V459 Q579 467 587 467 H609 Q617 467 617 459 V447'
+  ]
+};
 // Dibuja una marca de agua GEC discreta en la esquina inferior de la foto
 function dibujarMarca(g, w, h, m){
   const u = Math.min(w, h) / 100;              // unidad relativa al tamaño de la foto
@@ -1126,14 +1135,15 @@ function dibujarMarca(g, w, h, m){
   g.save();
   g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = u*0.9; g.shadowOffsetY = u*0.15;
   g.textBaseline = 'alphabetic';
-  // logo GEC pequeño
-  g.font = `800 ${u*3.9}px ${font}`; const gw = g.measureText('GEC').width;
-  g.fillStyle = 'rgba(255,255,255,.88)'; g.fillText('GEC', pad, base - u*2.6);
-  g.shadowColor = 'transparent';
-  g.fillStyle = 'rgba(58,141,222,.9)'; g.fillRect(pad, base - u*1.9, gw, u*0.55);
-  g.shadowColor = 'rgba(0,0,0,.55)';
-  g.fillStyle = 'rgba(255,255,255,.7)'; g.font = `700 ${u*1.45}px ${font}`;
-  g.fillText('F I E L D', pad + gw/2 - g.measureText('F I E L D').width/2, base);
+  // logo GEC oficial (mismo trazo que icons/gec-logo.svg)
+  const lh = u*7.2, ls = lh/445, gw = 925*ls;
+  g.save();
+  g.translate(pad - 40*ls, base - lh - 40*ls); g.scale(ls, ls);
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.strokeStyle = 'rgba(255,255,255,.9)';
+  g.lineWidth = 13; g.lineJoin = 'round';
+  g.fill(new Path2D(GEC_LOGO.chevron));
+  GEC_LOGO.letras.forEach(d => g.stroke(new Path2D(d)));
+  g.restore();
   // textos
   const x1 = pad + gw + u*2.2;
   const maxW = Math.min(w * 0.62, w - x1 - pad);
