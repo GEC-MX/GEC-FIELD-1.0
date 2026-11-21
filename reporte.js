@@ -277,7 +277,7 @@ function reporteJornadaPDF(j) {
       [0, 1].forEach(k => { const f = fotos[i + k]; if (!f) return; const x = M + k * (fw + 14);
         d.rect(x, y, fw, fh, { fill: C.bg }); d.image(f.data, x, y, fw, fh); d.rect(x, y, fw, fh, { stroke: C.line });
         const kc = ks.find(z => z.id === f.conceptoId);
-        d.text(x, y + fh + 11, `Foto ${i + k + 1}${kc ? ` · ${kc.clave} ${kc.desc}` : ''}`.slice(0, 70), { size: 7.5, bold: true, color: C.navy });
+        d.text(x, y + fh + 11, PDF.wrap(`Foto ${i + k + 1}${f.nombre ? ` · ${f.nombre}` : ''}${kc ? ` · ${kc.clave} ${kc.desc}` : ''}`, fw, 7.5, true)[0], { size: 7.5, bold: true, color: C.navy });
         d.text(x, y + fh + 22, PDF.wrap(f.pie || 'Sin descripción', fw, 7.5)[0], { size: 7.5, color: C.gray }); });
       y += fh + 34;
     }

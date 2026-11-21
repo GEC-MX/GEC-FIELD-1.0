@@ -73,7 +73,7 @@ const Store = {
 
 /* ===================== ESTADO ===================== */
 let S = { contratoId:'c1', supervisor:'', frente:'', jornadas:[], formatos:[], planosOffline:{}, programas:{},
-  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto', marca:true, marcaGPS:true} };
+  perfil:{foto:'', fuente:''}, tema:{acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto', marca:true, marcaGPS:true, marcaCodigo:true, nomen:'cfn', nomenCustom:''}, clavesFrente:{} };
 /* ===================== PERSONALIZACIÓN ===================== */
 const ACENTOS = {
   azul:   {n:'Azul GEC', a:'#1D6FB8', b:'#3A8DDE', h1:'#13315C', h2:'#1D6FB8'},
@@ -713,9 +713,14 @@ function vPerfil(){
     <label class="tcheck ${t.saludo?'on':''}" style="margin-top:12px"><input type="checkbox" data-action="toggleSaludo" ${t.saludo?'checked':''}><span class="hi">${ic('user')}</span><span class="tt">Mostrar mi foto en la portada</span><span class="tk">${ic('check')}</span></label>
   </div>
   <div class="card"><h3>${hi('camera')}Fotografías</h3>
-    <label class="tcheck ${t.marca?'on':''}" style="margin-top:0"><input type="checkbox" data-action="toggleMarca" ${t.marca?'checked':''}><span class="hi">${ic('shield')}</span><span class="tt">Marca de agua GEC en las fotos<small class="sub">Fecha, hora, contrato, frente, planta y supervisor</small></span><span class="tk">${ic('check')}</span></label>
+    <label class="tcheck ${t.marca?'on':''}" style="margin-top:0"><input type="checkbox" data-action="toggleMarca" ${t.marca?'checked':''}><span class="hi">${ic('shield')}</span><span class="tt">Marca de agua GEC en las fotos<small class="sub">Fecha, hora, proyecto, contrato, frente, planta y supervisor</small></span><span class="tk">${ic('check')}</span></label>
     <label class="tcheck ${t.marca&&t.marcaGPS?'on':''}" style="${t.marca?'':'opacity:.5;pointer-events:none'}"><input type="checkbox" data-action="toggleMarcaGPS" ${t.marcaGPS?'checked':''} ${t.marca?'':'disabled'}><span class="hi">${ic('pin')}</span><span class="tt">Incluir coordenadas GPS<small class="sub">Ubicación del teléfono al agregar la foto</small></span><span class="tk">${ic('check')}</span></label>
-    ${t.marca?`<div class="wmprev">${ic('camera')}<div class="wmband"><b>GEC</b><span><i>${esc(new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}))} · ${ahora()} h</i><i>${esc(contrato(S.contratoId).numero)}${S.frente?' · '+esc(S.frente):''}</i><i>${esc(proyecto(contrato(S.contratoId).proyectoId).planta)}${S.supervisor?' · '+esc(S.supervisor):''}${t.marcaGPS?' · 19.43260, -99.13320':''}</i></span></div></div>`:''}
+    <label class="tcheck ${t.marca&&t.marcaCodigo?'on':''}" style="${t.marca?'':'opacity:.5;pointer-events:none'}"><input type="checkbox" data-action="toggleMarcaCod" ${t.marcaCodigo?'checked':''} ${t.marca?'':'disabled'}><span class="hi">${ic('file')}</span><span class="tt">Imprimir el nombre de la foto<small class="sub">En la esquina superior derecha</small></span><span class="tk">${ic('check')}</span></label>
+    <label>Nomenclatura de las fotos</label>
+    <div class="nomen">${NOMENCLATURAS.map(x=>`<button class="${(t.nomen||'cfn')===x.id?'on':''}" data-action="setNomen" data-v="${x.id}"><span class="rd"></span><span><b>${x.n}</b>${x.p?`<small>${esc(x.p)}</small>`:''}</span></button>`).join('')}</div>
+    ${t.nomen==='custom'?`<input type="text" data-k="nomenCustom" data-tema="1" value="${esc(t.nomenCustom||'')}" placeholder="{PROYECTO}_{FRENTE}_{FECHA}_{N}" style="margin-top:8px"><div class="muted" style="font-size:11.5px;margin-top:4px">Campos: {PROYECTO} {CONTRATO} {PLANTA} {FRENTE} {FECHA} {HORA} {N}</div>`:''}
+    <div class="nomprev">${ic('camera','xs')} Ejemplo: <b>${esc(nombreFoto({contratoId:S.contratoId, frente:S.frente||'Eje A-C', fecha:hoy()}, Date.now(), 1))}.jpg</b></div>
+    ${t.marca?`<div class="wmprev">${ic('camera')}${t.marcaCodigo?`<span class="wmcod">${esc(nombreFoto({contratoId:S.contratoId, frente:S.frente||'Eje A-C', fecha:hoy()}, Date.now(), 1))}</span>`:''}<div class="wmband"><b>GEC</b><span><i>${esc(new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}))} · ${ahora()} h</i><i>${esc(proyecto(contrato(S.contratoId).proyectoId).nombre)} · ${esc(contrato(S.contratoId).numero)}${t.marcaGPS?' · GPS 19.43260, -99.13320':''}</i><i>${S.frente?'Frente: '+esc(S.frente)+' · ':''}${esc(proyecto(contrato(S.contratoId).proyectoId).planta)}${S.supervisor?' · '+esc(S.supervisor):''}</i></span></div></div>`:''}
   </div>
   <div class="card"><h3>${hi('layers')}Cuenta Microsoft</h3>
     ${u?`${spPrueba?`<div class="muted" style="margin-bottom:8px">${esc(spPrueba)}</div>`:''}
@@ -724,7 +729,7 @@ function vPerfil(){
       <button class="btn ms sm" data-action="login">${MS_LOGO}Iniciar sesión con Microsoft</button>
       <div class="muted" style="margin-top:8px;font-size:11.5px">Dirección de esta app: ${esc(Auth.redirectUri())}</div>`}
   </div>
-  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.5</div>`;
+  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.6</div>`;
 }
 
 function vJornadas(){
@@ -796,6 +801,8 @@ function stepPrep(j){
     </div>
     <label>Supervisor GEC</label><div class="fi">${ic('user')}<input type="text" data-k="supervisor" data-global="1" value="${esc(S.supervisor)}" placeholder="Nombre del supervisor"></div>
     <label>Frente de trabajo</label><div class="fi">${ic('pin')}${inp('frente','text','placeholder="Ej. Eje A-C / Zona de andenes" list="frentes"')}</div>
+    <label>Clave del frente para fotos</label><div class="fi">${ic('file')}<input type="text" data-k="frenteClave" value="${esc(j.frenteClave || S.clavesFrente[j.frente] || '')}" placeholder="${esc(claveAuto(j.frente))}" maxlength="14" style="text-transform:uppercase"></div>
+    <div class="muted" style="font-size:12px;margin-top:4px">${ic('camera','xs')} Las fotos se nombrarán así: <b>${esc(nombreFoto(j, Date.now(), siguienteNumFoto(j)))}.jpg</b></div>
     <datalist id="frentes">${frentesUsados().map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
   </div>
   <div class="card"><h3>${hi('shield','green')}Lista de verificación <span class="badge ${hechos===items.length?'b-env':'b-borr'}" style="margin-left:auto">${hechos}/${items.length}</span></h3>
@@ -869,10 +876,10 @@ function stepFotos(j){
   return `<div class="card"><h3>${hi('camera')}Evidencia fotográfica ${fs.length?`<span class="badge b-sending" style="margin-left:auto">${fs.length}</span>`:''}</h3>
     <label class="drop"><span class="hi">${ic('camera')}</span><b>Tomar o elegir fotografías</b><small>${S.tema.marca?'Con marca de agua GEC · ':''}Se reducen de tamaño para ahorrar datos</small><input type="file" accept="image/*" capture="environment" multiple data-action="addFotos" style="display:none"></label>
   </div>
-  ${fs.length?`<div class="photos">${fs.map((f,i)=>`<div class="ph"><img src="${f.data}" alt=""><div>
+  ${fs.length?`<div class="photos">${fs.map((f,i)=>`<div class="ph"><img src="${f.data}" alt="">${f.nombre?`<div class="phcode">${ic('file','xs')}<span>${esc(f.nombre)}.jpg</span></div>`:''}<div>
      <input type="text" placeholder="Descripción" data-k="fotos.${i}.pie" value="${esc(f.pie||'')}">
      <select data-k="fotos.${i}.conceptoId"><option value="">Concepto…</option>${ks.map(k=>`<option value="${k.id}" ${f.conceptoId===k.id?'selected':''}>${esc(k.clave)} ${esc(k.desc)}</option>`).join('')}</select>
-     <button class="btn danger sm" style="width:100%" data-action="delFoto" data-i="${i}">${ic('trash')}Quitar</button></div></div>`).join('')}</div>`
+     <div class="row" style="gap:6px"><button class="btn sec sm" data-action="bajarFoto" data-i="${i}" aria-label="Descargar">${ic('download')}</button><button class="btn danger sm" data-action="delFoto" data-i="${i}">${ic('trash')}Quitar</button></div></div></div>`).join('')}</div>`
    :`<div class="empty"><span class="bigic">${ic('camera')}</span>Aún no hay fotografías en esta jornada.</div>`}`;
 }
 
@@ -1060,17 +1067,51 @@ function posicionRapida(){
     catch(e){ clearTimeout(t); res(null); }
   });
 }
+/* ---- Nomenclatura de fotografías ---- */
+const NOMENCLATURAS = [
+  {id:'cfn', n:'Contrato · Frente · Fecha · Núm.', p:'{CONTRATO}_{FRENTE}_{FECHA}_{N}'},
+  {id:'pfn', n:'Proyecto · Frente · Fecha · Núm.', p:'{PROYECTO}_{FRENTE}_{FECHA}_{N}'},
+  {id:'fhn', n:'Frente · Fecha · Hora · Núm.', p:'{FRENTE}_{FECHA}-{HORA}_{N}'},
+  {id:'custom', n:'Personalizada', p:''}
+];
+const slug = (t, max=24) => String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,max).replace(/-+$/,'');
+// Clave corta sugerida para un frente: "Eje A-C / Zona de andenes" → "EJE-AC"
+function claveAuto(frente){
+  return slug(String(frente||'').split('/')[0], 14) || 'GRAL';
+}
+function claveFrente(j){ return slug(j.frenteClave || S.clavesFrente[j.frente] || claveAuto(j.frente), 14) || 'GRAL'; }
+function patronFotos(){
+  const t = S.tema;
+  if(t.nomen==='custom') return t.nomenCustom || NOMENCLATURAS[0].p;
+  return (NOMENCLATURAS.find(x=>x.id===t.nomen) || NOMENCLATURAS[0]).p;
+}
+function nombreFoto(j, fecha, n){
+  const c = contrato(j.contratoId), p = proyecto(c.proyectoId);
+  const d = new Date(fecha||Date.now());
+  const ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  const hm = d.toTimeString().slice(0,5).replace(':','');
+  return patronFotos().replace(/\{(\w+)\}/g, (m,k)=>({CONTRATO:slug(c.numero), PROYECTO:slug(p.nombre,18), PLANTA:slug(p.planta,12), FRENTE:claveFrente(j), FECHA:ymd, HORA:hm, N:String(n).padStart(3,'0')})[k] ?? m)
+    .replace(/[^A-Za-z0-9_\-]+/g,'-');
+}
+// Consecutivo: fotos del mismo contrato, frente y día ya registradas + 1
+function siguienteNumFoto(j){
+  const cf = claveFrente(j); let n = 0;
+  S.jornadas.forEach(x=>{ if(x.contratoId===j.contratoId && x.fecha===j.fecha && claveFrente(x)===cf) n += (x.fotos||[]).length; });
+  return n + 1;
+}
+
 // Datos que se imprimen sobre la foto
-function datosMarca(j, file, pos){
+function datosMarca(j, file, pos, codigo){
   const c = contrato(j.contratoId), p = proyecto(c.proyectoId), i = j.inicio||{};
   const t = new Date(file.lastModified || Date.now());
   const f = t.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' · ' + t.toTimeString().slice(0,5) + ' h';
   const ll = pos || (i.lat!=null ? {lat:i.lat, lon:i.lon} : null);
-  const l3 = [p.planta, S.supervisor||''].filter(Boolean).join(' · ');
+  const l3 = [j.frente ? 'Frente: '+j.frente : '', p.planta, S.supervisor||''].filter(Boolean).join(' · ');
   return {
     l1: f + (i.clima ? `   ${i.temp!==''&&i.temp!=null?i.temp+' °C ':''}${i.clima}` : ''),
-    l2: `${c.numero}${j.frente?' · '+j.frente:''}`,
-    l3: l3 + (S.tema.marcaGPS && ll ? ` · ${(+ll.lat).toFixed(5)}, ${(+ll.lon).toFixed(5)}` : '')
+    l2: `${p.nombre} · ${c.numero}` + (S.tema.marcaGPS && ll ? `   GPS ${(+ll.lat).toFixed(5)}, ${(+ll.lon).toFixed(5)}` : ''),
+    l3: l3,
+    cod: codigo || ''
   };
 }
 // Dibuja la marca de agua GEC en la parte inferior de la foto
@@ -1097,6 +1138,15 @@ function dibujarMarca(g, w, h, m){
   g.fillStyle = '#FFFFFF'; g.fillText(fit(m.l1, u*3.5, 700), x1, y0 + u*5.6);
   g.fillStyle = 'rgba(255,255,255,.92)'; g.fillText(fit(m.l2, u*3.1, 600), x1, y0 + u*10.2);
   g.fillStyle = 'rgba(207,224,243,.95)'; g.fillText(fit(m.l3, u*2.8, 500), x1, y0 + u*14.4);
+  // código de la foto (nomenclatura) en la esquina superior derecha
+  if(m.cod){
+    g.font = `700 ${u*2.7}px ${font}`;
+    const tw = g.measureText(m.cod).width, ph = u*5, pw = tw + u*4, px = w - pw - u*2.5, py = u*2.5;
+    g.fillStyle = 'rgba(11,37,69,.78)';
+    if(g.roundRect){ g.beginPath(); g.roundRect(px, py, pw, ph, u*1.2); g.fill(); } else g.fillRect(px, py, pw, ph);
+    g.fillStyle = '#3A8DDE'; g.fillRect(px, py + ph - u*.5, pw, u*.5);
+    g.fillStyle = '#FFFFFF'; g.textBaseline = 'middle'; g.fillText(m.cod, px + u*2, py + ph/2 + u*.1); g.textBaseline = 'alphabetic';
+  }
 }
 
 function comprimir(file, max=1280, marca=null){
@@ -1170,6 +1220,7 @@ document.addEventListener('input', e=>{
   const k = el.dataset.k; if(!k) return;
   const val = el.type==='checkbox' ? el.checked : el.value;
   if(el.dataset.global){ S[k]=val; persist(); return; }
+  if(el.dataset.tema){ S.tema[k]=val; persist(); return; }
   const j = J(); if(!j) return;
   setPath(j, k, val); if(k==='frente') S.frente = val; persist();
 });
@@ -1188,6 +1239,7 @@ document.addEventListener('change', async e=>{
     persist(); renderKeep(); return;
   }
   if(el.dataset.action==='toggleMarca'){ S.tema.marca = el.checked; persist(); renderKeep(); return; }
+  if(el.dataset.action==='toggleMarcaCod'){ S.tema.marcaCodigo = el.checked; persist(); renderKeep(); return; }
   if(el.dataset.action==='toggleMarcaGPS'){ S.tema.marcaGPS = el.checked; persist(); renderKeep(); return; }
   if(el.dataset.action==='toggleSaludo'){ S.tema.saludo = el.checked; persist(); renderKeep(); return; }
   if(el.dataset.action==='addFotos'){
@@ -1196,11 +1248,17 @@ document.addEventListener('change', async e=>{
     toast('Procesando fotografías…');
     j.fotos = j.fotos||[];
     const pos = (S.tema.marca && S.tema.marcaGPS) ? await posicionRapida() : null;
-    for(const f of files){ const d=await comprimir(f, 1280, S.tema.marca ? datosMarca(j, f, pos) : null); if(d) j.fotos.push({id:uid(),data:d,pie:'',conceptoId:'',marca:!!S.tema.marca}); }
+    if(j.frente) S.clavesFrente[j.frente] = claveFrente(j);
+    for(const f of files){
+      const cod = nombreFoto(j, f.lastModified || Date.now(), siguienteNumFoto(j));
+      const d=await comprimir(f, 1280, S.tema.marca ? datosMarca(j, f, pos, S.tema.marcaCodigo ? cod : '') : null);
+      if(d) j.fotos.push({id:uid(),data:d,pie:'',conceptoId:'',marca:!!S.tema.marca,nombre:cod});
+    }
     persist(); renderKeep(); toast(`${files.length} foto(s) agregada(s).`);
     return;
   }
   const k = el.dataset.k;
+  if(k==='frente' || k==='frenteClave' || k==='nomenCustom'){ renderKeep(); return; }
   if(k && (el.tagName==='SELECT' || el.type==='checkbox' || el.type==='number')){
     // refresca totales visibles (personal, resumen) sin perder la captura
     if(k.startsWith('inicio.personal') || k.startsWith('prep.')) renderKeep();
@@ -1327,6 +1385,9 @@ document.addEventListener('click', e=>{
       modal('Eliminar borrador','Se borrará esta jornada en captura. Esta acción no se puede deshacer.','Eliminar', ()=>{
         S.jornadas = S.jornadas.filter(x=>x.id!==el.dataset.id); persist(); closeModal(); go('jornadas'); toast('Borrador eliminado.');
       }); break;
+    case 'bajarFoto': { const f=(j.fotos||[])[+el.dataset.i]; if(!f) break;
+      const a=document.createElement('a'); a.href=f.data; a.download=(f.nombre||'foto')+'.jpg'; document.body.appendChild(a); a.click(); a.remove(); break; }
+    case 'setNomen': S.tema.nomen = el.dataset.v; persist(); renderKeep(); break;
     case 'pdfDescargar': descargarPDF(el.dataset.id); break;
     case 'pdfCompartir': compartirPDF(el.dataset.id); break;
     case 'pdfModal': modalPDF(el.dataset.id, false); break;
@@ -1368,7 +1429,8 @@ function cuentaHTML(){
   if(saved && Array.isArray(saved.jornadas)){
     S = Object.assign(S, saved);
     S.perfil = Object.assign({foto:'', fuente:''}, saved.perfil||{});
-    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto', marca:true, marcaGPS:true}, saved.tema||{});
+    S.tema = Object.assign({acento:'azul', portada:'gruas', portadaFoto:'', letra:'normal', saludo:true, modo:'auto', marca:true, marcaGPS:true, marcaCodigo:true, nomen:'cfn', nomenCustom:''}, saved.tema||{});
+    S.clavesFrente = saved.clavesFrente || {};
     S.formatos = S.formatos || []; S.frente = S.frente || ''; S.planosOffline = S.planosOffline || {}; S.programas = S.programas || {};
     [...S.jornadas, ...S.formatos].forEach(j=>{ if(j.estado==='enviando') j.estado='pendiente'; });
   }
