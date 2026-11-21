@@ -442,7 +442,7 @@ function vHome(){
   const ult = S.jornadas.filter(j=>j.contratoId===c.id && j.estado!=='borrador').slice(-1)[0];
   const ks = conceptosDe(c.id);
   const nAtr = ks.filter(k=>estadoProg(k).key==='atr').length;
-  const nom = nombreUsuario().split(' ')[0];
+  const nom = (nombreUsuario().split(' ').find(w=>w && !w.endsWith('.')) || '');
   const tile = (v, icono, txt, sub, tono) => `<button class="tile" data-action="go" data-v="${v}"><span class="hi ${tono}">${ic(icono)}</span><b>${txt}</b><small>${sub}</small></button>`;
   return `
   ${Auth.signedIn()?'':`<div class="signin">${ic('lock','xs')}<span>Sin sesión de Microsoft</span><button class="btn ms xs" data-action="login">${MS_LOGO}Iniciar sesión</button></div>`}
@@ -719,7 +719,7 @@ function vPerfil(){
       <button class="btn ms sm" data-action="login">${MS_LOGO}Iniciar sesión con Microsoft</button>
       <div class="muted" style="margin-top:8px;font-size:11.5px">Dirección de esta app: ${esc(Auth.redirectUri())}</div>`}
   </div>
-  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.3</div>`;
+  <div class="muted" style="text-align:center;font-size:12px;margin:4px 0 10px">GEC FIELD · versión 1.4</div>`;
 }
 
 function vJornadas(){
@@ -743,7 +743,8 @@ function vDetalle(){
     <div class="muted" style="margin-top:4px">${esc(c.numero)} — ${esc(c.nombre)}</div></div>
   ${j.estado==='borrador'
     ? `<button class="btn" data-action="resume" data-id="${j.id}">${ic('pen')}Continuar captura</button><div style="height:10px"></div><button class="btn danger" data-action="askDelete" data-id="${j.id}">${ic('trash')}Eliminar borrador</button>`
-    : `<div class="card"><h3>${hi('chart')}Resumen</h3>${resumenHTML(j)}</div>
+    : `<button class="cta" data-action="pdfModal" data-id="${j.id}"><span class="cta-ic" style="background:linear-gradient(135deg,#E05A4B,#A8281C)">${ic('file')}</span><span><b>Reporte PDF para el cliente</b><small>${esc(j.folio||'')} · descargar o compartir</small></span>${ic('chevR')}</button>
+       <div class="card"><h3>${hi('chart')}Resumen</h3>${resumenHTML(j)}</div>
        <div class="card"><h3>${hi('hardhat')}Actividades</h3>${acts.length?acts.map(k=>`<div class="kv"><span>${esc(k.clave)} ${esc(k.desc)}</span><b>+${j.avances[k.id].hoy}%</b></div>`).join(''):'<div class="muted">Sin avance registrado.</div>'}</div>
        ${(j.fotos||[]).length?`<div class="card"><h3>${hi('camera')}Evidencia fotográfica</h3><div class="photos">${j.fotos.map(f=>`<div class="ph"><img src="${f.data}" alt=""><div class="muted">${esc(f.pie||'Sin descripción')}</div></div>`).join('')}</div></div>`:''}
        <div class="card"><h3>${hi('book')}Nota de bitácora</h3><div class="nota">${esc(j.nota||'—')}</div></div>`}`;
@@ -1065,6 +1066,39 @@ function comprimir(file, max=1280){
   });
 }
 
+/* ===================== REPORTE PDF ===================== */
+function generarPDF(id){
+  const j = S.jornadas.find(x=>x.id===id); if(!j) return null;
+  try{ return reporteJornadaPDF(j); }catch(e){ console.error(e); toast('No se pudo generar el PDF: '+e.message); return null; }
+}
+function descargarPDF(id){
+  const r = generarPDF(id); if(!r) return;
+  const url = URL.createObjectURL(r.blob);
+  const a = document.createElement('a'); a.href=url; a.download=r.nombre; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  toast(`PDF descargado: ${r.nombre}`);
+}
+async function compartirPDF(id){
+  const r = generarPDF(id); if(!r) return;
+  const f = new File([r.blob], r.nombre, {type:'application/pdf'});
+  if(navigator.canShare && navigator.canShare({files:[f]})){
+    try{ await navigator.share({files:[f], title:r.nombre.replace(/_/g,' ').replace('.pdf',''), text:'Reporte diario de supervisión de obra — GEC'}); }
+    catch(e){ if(e.name!=='AbortError') toast('No se pudo compartir: '+e.message); }
+  } else { toast('Este teléfono no permite compartir archivos desde el navegador. Se descargará el PDF.'); descargarPDF(id); }
+}
+function modalPDF(id, recienCerrada){
+  const j = S.jornadas.find(x=>x.id===id); if(!j) return;
+  const c = contrato(j.contratoId);
+  $('#modalRoot').innerHTML = `<div class="modal" data-action="modalBg"><div>
+    <div class="pdfhead">${recienCerrada?`<span class="hi green">${ic('check')}</span>`:`<span class="hi red">${ic('file')}</span>`}<div><h3 style="margin:0">${recienCerrada?'Jornada cerrada':'Reporte para el cliente'}</h3>
+    <div class="muted">${recienCerrada?(online()?'Se está enviando a SharePoint.':'Se enviará a SharePoint cuando haya señal.'):esc(c.numero)}</div></div></div>
+    <div class="pdfcard"><span class="pdfic">PDF</span><div style="min-width:0"><b>Reporte diario de supervisión</b><div class="muted" style="font-size:12px">${esc(j.folio||'')} · ${fmtFecha(j.fecha)} · ${(j.fotos||[]).length} foto(s)</div></div></div>
+    <div class="muted" style="margin:10px 0 12px;font-size:12.5px">Incluye encabezado GEC, indicadores, avance, seguridad, personal, actividades, incidencias, acuerdos, nota de bitácora, fotografías y espacio para firmas.</div>
+    <div class="row"><button class="btn sec" data-action="pdfDescargar" data-id="${j.id}">${ic('download')}Descargar</button><button class="btn" data-action="pdfCompartir" data-id="${j.id}">${ic('upload')}Compartir</button></div>
+    <div style="height:8px"></div><button class="btn ghost" data-action="modalNo">Listo</button>
+  </div></div>`;
+}
+
 /* ===================== MODAL ===================== */
 function modal(title, text, okTxt, onOk){
   $('#modalRoot').innerHTML = `<div class="modal" data-action="modalBg"><div>
@@ -1148,9 +1182,11 @@ document.addEventListener('click', e=>{
       j.cierre.horaFin = ahora();
       for(let s=0;s<STEPS.length;s++){ const err=validar(j,s); if(err){ step=s; j.paso=s; render(); window.scrollTo(0,0); toast(err); return; } }
       if(!j.nota) j.nota = generarNota(j);
-      j.estado='pendiente'; j.cerrada=new Date().toISOString(); persist();
+      j.estado='pendiente'; j.cerrada=new Date().toISOString();
+      if(!j.folio){ const c=contrato(j.contratoId); const n=S.jornadas.filter(x=>x.contratoId===j.contratoId && x.folio).length+1; j.folio=`RDO-${c.numero}-${String(n).padStart(3,'0')}`; }
+      persist();
       view='home'; render(); window.scrollTo(0,0);
-      toast(online() ? 'Jornada cerrada. Enviando…' : 'Jornada cerrada y guardada. Se enviará cuando haya señal.');
+      modalPDF(j.id, true);
       setTimeout(()=>sync(),600); break;
     }
     case 'addPersonal': j.inicio.personal.push({cat:'',cantidad:''}); persist(); renderKeep(); break;
@@ -1234,6 +1270,9 @@ document.addEventListener('click', e=>{
       modal('Eliminar borrador','Se borrará esta jornada en captura. Esta acción no se puede deshacer.','Eliminar', ()=>{
         S.jornadas = S.jornadas.filter(x=>x.id!==el.dataset.id); persist(); closeModal(); go('jornadas'); toast('Borrador eliminado.');
       }); break;
+    case 'pdfDescargar': descargarPDF(el.dataset.id); break;
+    case 'pdfCompartir': compartirPDF(el.dataset.id); break;
+    case 'pdfModal': modalPDF(el.dataset.id, false); break;
     case 'modalOk': modal._ok && modal._ok(); break;
     case 'modalNo': closeModal(); break;
     case 'modalBg': if(e.target===el) closeModal(); break;
@@ -1277,6 +1316,7 @@ function cuentaHTML(){
     [...S.jornadas, ...S.formatos].forEach(j=>{ if(j.estado==='enviando') j.estado='pendiente'; });
   }
   if(!contrato(S.contratoId)) S.contratoId='c1';
+  S.jornadas.filter(x=>x.estado!=='borrador' && !x.folio).forEach(x=>{ const c=contrato(x.contratoId); if(!c) return; const n=S.jornadas.filter(y=>y.contratoId===x.contratoId && y.folio).length+1; x.folio=`RDO-${c.numero}-${String(n).padStart(3,'0')}`; });
   render();
   climaInicioSiHayPermiso();
   setInterval(()=>{ const c=$('#clk'); if(c) c.textContent=ahora(); }, 15000);

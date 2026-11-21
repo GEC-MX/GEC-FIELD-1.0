@@ -180,7 +180,8 @@ header{background:linear-gradient(135deg,#0B2545 0%,#13315C 70%,#1D4E89 100%);pa
 .strip>div{flex:1;display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:12px;padding:10px 12px;margin-bottom:10px}
 .strip>div>.ic,.strip>div>span>.ic{width:22px;height:22px;color:var(--accent)}
 .strip small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:600}
-.strip b{color:var(--ink);font-size:15px;white-space:nowrap}
+.strip b{color:var(--ink);font-size:15px;white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis}
+.strip>div{min-width:0}
 .strip>div>span:not(.tag){min-width:0}
 .strip .tag{font-size:9.5px;padding:2px 6px}
 .strip .tag{margin-left:auto}
@@ -344,6 +345,9 @@ body.dark .datebox small{color:#BFD6EE}
 .seg3 button{flex:1;padding:10px 4px;border:1.5px solid var(--line);border-radius:12px;font-weight:600;font-size:13px;color:var(--muted);background:var(--card);display:flex;flex-direction:column;align-items:center;gap:4px}
 .seg3 button .ic{width:22px;height:22px}
 .seg3 button.on{border-color:var(--accent);color:var(--ink);background:#F0F6FD}
+.pdfhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.pdfcard{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pdfic{width:40px;height:48px;border-radius:6px;background:linear-gradient(160deg,#E05A4B,#A8281C);color:#fff;font-weight:800;font-size:11px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px;flex:0 0 40px;box-shadow:0 2px 6px rgba(168,40,28,.3)}
 </style>
 </head>
 <body>
@@ -362,6 +366,7 @@ body.dark .datebox small{color:#BFD6EE}
 <input type="file" id="progFile" style="position:fixed;left:-9999px;opacity:0" tabindex="-1">
 
 <script src="auth.js"></script>
+<script src="reporte.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
