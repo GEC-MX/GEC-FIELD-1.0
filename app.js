@@ -715,7 +715,7 @@ function vPerfil(){
   <div class="card"><h3>${hi('camera')}Fotografías</h3>
     <label class="tcheck ${t.marca?'on':''}" style="margin-top:0"><input type="checkbox" data-action="toggleMarca" ${t.marca?'checked':''}><span class="hi">${ic('shield')}</span><span class="tt">Marca de agua GEC en las fotos<small class="sub">Fecha, hora, proyecto, contrato, frente, planta y supervisor</small></span><span class="tk">${ic('check')}</span></label>
     <label class="tcheck ${t.marca&&t.marcaGPS?'on':''}" style="${t.marca?'':'opacity:.5;pointer-events:none'}"><input type="checkbox" data-action="toggleMarcaGPS" ${t.marcaGPS?'checked':''} ${t.marca?'':'disabled'}><span class="hi">${ic('pin')}</span><span class="tt">Incluir coordenadas GPS<small class="sub">Ubicación del teléfono al agregar la foto</small></span><span class="tk">${ic('check')}</span></label>
-    <label class="tcheck ${t.marca&&t.marcaCodigo?'on':''}" style="${t.marca?'':'opacity:.5;pointer-events:none'}"><input type="checkbox" data-action="toggleMarcaCod" ${t.marcaCodigo?'checked':''} ${t.marca?'':'disabled'}><span class="hi">${ic('file')}</span><span class="tt">Imprimir el nombre de la foto<small class="sub">En la esquina superior derecha</small></span><span class="tk">${ic('check')}</span></label>
+    <label class="tcheck ${t.marca&&t.marcaCodigo?'on':''}" style="${t.marca?'':'opacity:.5;pointer-events:none'}"><input type="checkbox" data-action="toggleMarcaCod" ${t.marcaCodigo?'checked':''} ${t.marca?'':'disabled'}><span class="hi">${ic('file')}</span><span class="tt">Imprimir el nombre de la foto<small class="sub">Pequeño, en la esquina inferior derecha</small></span><span class="tk">${ic('check')}</span></label>
     <label>Nomenclatura de las fotos</label>
     <div class="nomen">${NOMENCLATURAS.map(x=>`<button class="${(t.nomen||'cfn')===x.id?'on':''}" data-action="setNomen" data-v="${x.id}"><span class="rd"></span><span><b>${x.n}</b>${x.p?`<small>${esc(x.p)}</small>`:''}</span></button>`).join('')}</div>
     ${t.nomen==='custom'?`<input type="text" data-k="nomenCustom" data-tema="1" value="${esc(t.nomenCustom||'')}" placeholder="{PROYECTO}_{FRENTE}_{FECHA}_{N}" style="margin-top:8px"><div class="muted" style="font-size:11.5px;margin-top:4px">Campos: {PROYECTO} {CONTRATO} {PLANTA} {FRENTE} {FECHA} {HORA} {N}</div>`:''}
@@ -1114,39 +1114,43 @@ function datosMarca(j, file, pos, codigo){
     cod: codigo || ''
   };
 }
-// Dibuja la marca de agua GEC en la parte inferior de la foto
+// Dibuja una marca de agua GEC discreta en la esquina inferior de la foto
 function dibujarMarca(g, w, h, m){
   const u = Math.min(w, h) / 100;              // unidad relativa al tamaño de la foto
-  const bh = Math.round(u * 17), y0 = h - bh;
-  const gr = g.createLinearGradient(0, y0 - u*6, 0, h);
-  gr.addColorStop(0, 'rgba(11,37,69,0)'); gr.addColorStop(0.25, 'rgba(11,37,69,.72)'); gr.addColorStop(1, 'rgba(11,37,69,.9)');
-  g.fillStyle = gr; g.fillRect(0, y0 - u*6, w, bh + u*6);
-  const pad = u * 3.2, font = 'Inter, Roboto, "Segoe UI", Arial, sans-serif';
-  // logo GEC + FIELD
-  g.textBaseline = 'alphabetic'; g.fillStyle = '#FFFFFF';
-  g.font = `800 ${u*6.4}px ${font}`; const gw = g.measureText('GEC').width;
-  g.fillText('GEC', pad, y0 + u*8.2);
-  g.fillStyle = '#3A8DDE'; g.fillRect(pad, y0 + u*9.6, gw, u*1.1);
-  g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `700 ${u*2.5}px ${font}`;
-  g.fillText('F I E L D', pad + gw/2 - g.measureText('F I E L D').width/2, y0 + u*13.6);
-  // separador
-  const x1 = pad + Math.max(gw, u*12) + u*3;
-  g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x1 - u*1.6, y0 + u*3, Math.max(1, u*.25), bh - u*6);
+  const font = 'Inter, Roboto, "Segoe UI", Arial, sans-serif';
+  const pad = u * 2.6, base = h - pad;          // última línea
+  // sombra muy suave solo en la franja inferior, para que el texto se lea sobre fondos claros
+  const gr = g.createLinearGradient(0, h - u*14, 0, h);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.32)');
+  g.fillStyle = gr; g.fillRect(0, h - u*14, w, u*14);
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = u*0.9; g.shadowOffsetY = u*0.15;
+  g.textBaseline = 'alphabetic';
+  // logo GEC pequeño
+  g.font = `800 ${u*3.9}px ${font}`; const gw = g.measureText('GEC').width;
+  g.fillStyle = 'rgba(255,255,255,.88)'; g.fillText('GEC', pad, base - u*2.6);
+  g.shadowColor = 'transparent';
+  g.fillStyle = 'rgba(58,141,222,.9)'; g.fillRect(pad, base - u*1.9, gw, u*0.55);
+  g.shadowColor = 'rgba(0,0,0,.55)';
+  g.fillStyle = 'rgba(255,255,255,.7)'; g.font = `700 ${u*1.45}px ${font}`;
+  g.fillText('F I E L D', pad + gw/2 - g.measureText('F I E L D').width/2, base);
   // textos
-  const maxW = w - x1 - pad;
+  const x1 = pad + gw + u*2.2;
+  const maxW = Math.min(w * 0.62, w - x1 - pad);
   const fit = (t, sz, wt) => { g.font = `${wt} ${sz}px ${font}`; let s = t; while(s.length > 4 && g.measureText(s).width > maxW) s = s.slice(0,-2); return s===t ? t : s.trimEnd()+'…'; };
-  g.fillStyle = '#FFFFFF'; g.fillText(fit(m.l1, u*3.5, 700), x1, y0 + u*5.6);
-  g.fillStyle = 'rgba(255,255,255,.92)'; g.fillText(fit(m.l2, u*3.1, 600), x1, y0 + u*10.2);
-  g.fillStyle = 'rgba(207,224,243,.95)'; g.fillText(fit(m.l3, u*2.8, 500), x1, y0 + u*14.4);
-  // código de la foto (nomenclatura) en la esquina superior derecha
+  let ancho = 0;
+  const linea = (t, sz, wt, col, yy) => { const tx = fit(t, sz, wt); g.fillStyle = col; g.fillText(tx, x1, yy); ancho = Math.max(ancho, g.measureText(tx).width); };
+  linea(m.l1, u*2.5, 700, 'rgba(255,255,255,.92)', base - u*6.2);
+  linea(m.l2, u*2.15, 600, 'rgba(255,255,255,.82)', base - u*3.1);
+  linea(m.l3, u*2.0, 500, 'rgba(255,255,255,.72)', base);
+  // nombre de la foto, pequeño y alineado a la derecha
   if(m.cod){
-    g.font = `700 ${u*2.7}px ${font}`;
-    const tw = g.measureText(m.cod).width, ph = u*5, pw = tw + u*4, px = w - pw - u*2.5, py = u*2.5;
-    g.fillStyle = 'rgba(11,37,69,.78)';
-    if(g.roundRect){ g.beginPath(); g.roundRect(px, py, pw, ph, u*1.2); g.fill(); } else g.fillRect(px, py, pw, ph);
-    g.fillStyle = '#3A8DDE'; g.fillRect(px, py + ph - u*.5, pw, u*.5);
-    g.fillStyle = '#FFFFFF'; g.textBaseline = 'middle'; g.fillText(m.cod, px + u*2, py + ph/2 + u*.1); g.textBaseline = 'alphabetic';
+    g.font = `600 ${u*1.9}px ${font}`; g.fillStyle = 'rgba(255,255,255,.72)';
+    const tw = g.measureText(m.cod).width;
+    if(x1 + ancho + u*3 + tw < w - pad) g.fillText(m.cod, w - pad - tw, base);
+    else g.fillText(m.cod, w - pad - tw, pad + u*1.9);   // si no cabe abajo, arriba a la derecha
   }
+  g.restore();
 }
 
 function comprimir(file, max=1280, marca=null){
